@@ -10,6 +10,56 @@ Tài liệu này mô tả chi tiết từng bước vận hành trong cả hai p
 
 Quy trình hoạt động theo nguyên tắc **Constraint-First (LLM-as-writer)**. Toàn bộ logic kiểm soát và sinh dữ liệu định danh được thực hiện bằng mã nguồn Python tĩnh để tránh hiện tượng LLM tự tạo thông tin ảo (hallucination) gây lệch nhãn.
 
+### 1.1. Sơ đồ Luồng Artifact (Artifact Flow)
+
+```mermaid
+graph TD
+    raw[raw_data_cleaned] --> step1[B1: Sinh record_type]
+    raw --> step2[B2: Trích form_blank/context]
+    
+    profile_core[profile_core] --> step3[B3: Sinh profile_fake]
+    schema[pii_schema] --> step3
+    step2 --> step3
+    
+    step3 --> step4{B4: Sanity Check}
+    
+    step4 -- PASS --> step5[B5: Sinh event_list + background_context]
+    step4 -- FAIL --> step3
+    
+    step5 --> step6[B6: Lập content_plan]
+    registry[narrative_style_registry] --> step9[B9: Lập format_plan]
+    
+    step6 --> step7{B7: Kiểm tra hợp lệ điều khiển}
+    step7 -- FAIL --> step5
+    step7 -- FAIL_FATAL --> step3
+    
+    step7 -- PASS --> step8[B8: PII/SPI Injection]
+    step8 --> step10[B10: Sinh initial_draft]
+    step9 --> step10
+    
+    step10 --> step10b{B10b: Revision Selection}
+    
+    step10b --> step11{B11: Content Validation & Spellcheck}
+    step11 -- HARD_FAIL --> step5
+    step11 -- SOFT_FAIL --> step11_fix[Tự động sửa lỗi 1 lần]
+    
+    step11_fix --> step11b{B11b: Thêm nhiễu & Revalidate}
+    step11 -- PASS --> step11b
+    step11b -- FAIL --> step11b_rollback[Rollback về text sạch của B11]
+    
+    step11b -- PASS --> step12{B12: Diversity Check}
+    step11b_rollback --> step12
+    step12 -- FAIL --> step5
+    
+    step12 -- PASS --> step13[B13: Span Annotation L1/L2]
+    step13 --> step14[B14: Lưu Metadata]
+    step14 --> step15[B15: annotated_record]
+    
+    step15 --> step16{B16: Đánh giá dataset & Sanitization}
+    step16 -- FAIL --> step_adjust[Điều chỉnh tham số pipeline]
+```
+
+### 1.2. Chi Tiết Từng Bước
 ### Bước 1: Sinh và Lựa chọn Loại Bản Ghi (`record_type`)
 * **Mục tiêu**: Xác định loại văn bản hành chính/tự sự cần sinh (ví dụ: Đơn xin học bổng, Tờ khai đăng ký kết hôn, Email gửi bổ sung hồ sơ...).
 * **Cách thức hoạt động**: 
