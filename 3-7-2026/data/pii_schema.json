@@ -1,0 +1,3587 @@
+{
+  "_meta": {
+    "version": "2.10.0",
+    "decree": "356/2025/NĐ-CP",
+    "effective_date": "2026-01-01",
+    "replaces": "13/2023/NĐ-CP",
+    "schema_supersedes": "2.5.0",
+    "k_anonymity_threshold": 5,
+    "pipeline_version": "SinhDuLieu-2.5",
+    "field_count_top_level": 34,
+    "classification_model": "3-axis (sensitivity × identifier_type × context_dependency)",
+    "axes": {
+      "sensitivity": {
+        "description": "Mức độ nhạy cảm theo NĐ 356/2025",
+        "values": {
+          "PII": "Dữ liệu cá nhân cơ bản (Điều 3)",
+          "SPI": "Dữ liệu cá nhân nhạy cảm (Điều 4)"
+        }
+      },
+      "identifier_type": {
+        "description": "Khả năng định danh từ giá trị riêng lẻ",
+        "values": {
+          "direct": "Định danh trực tiếp",
+          "indirect": "Định danh gián tiếp / quasi-identifier"
+        }
+      },
+      "context_dependency": {
+        "description": "Phụ thuộc ngữ cảnh hay không",
+        "values": {
+          "context_free": "Là PII/SPI bất kể ngữ cảnh",
+          "context_dependent": "Phụ thuộc ngữ cảnh/kết hợp dữ liệu khác"
+        }
+      }
+    },
+    "matrix_cells": {
+      "PII_direct_context_free": "Định danh trực tiếp, cơ bản (cccd, email, phone, passport, tax_code...)",
+      "PII_direct_context_dependent": "Trực tiếp nhưng cần ngữ cảnh (full_name, given_name, name_alias, address)",
+      "PII_indirect_context_free": "Quasi-identifier cơ bản (dob, gender, nationality, marital_status)",
+      "PII_indirect_context_dependent": "Quasi-identifier cần ngữ cảnh (family_name, middle_name, family_relations, digital_account, place_components)",
+      "SPI_direct_context_free": "Định danh nhạy cảm trực tiếp (bank_account, biometric, eid_credentials)",
+      "SPI_direct_context_dependent": "Nhạy cảm trực tiếp gắn ngữ cảnh (health_status, criminal_record)",
+      "SPI_indirect_context_free": "Thuộc tính nhạy cảm bản chất (ethnicity, religion, political_view, sexual_orientation)",
+      "SPI_indirect_context_dependent": "Suy luận nhạy cảm qua ngữ cảnh (private_life, location_data, behavioral_data)"
+    },
+    "aligned_inputs": {
+      "profile_core.format": "Nhóm regex CŨ trong profile_core (cccd ^\\d{12}$, gplx ^\\d{12}$, bhyt 10 số, tax_id 10/13, bank_card 16 Luhn). pii_schema.format là CANONICAL & chi tiết hơn (có cấu trúc/builder). Khi lệch, ưu tiên pii_schema; nên cập nhật profile_core.format cho đồng bộ.",
+      "synthetic_output.json": "Ngân hàng 20k profile có CCCD ĐÚNG cấu trúc (mã tỉnh+giới tính/thế kỷ+năm sinh khớp) -> builder cccd nên tái lập đúng logic này; make_profile_fake() trong notebook hiện SAI ở phần này.",
+      "narrative_style_registry.json": "Chứa difficulty_policy.factor_pool (orchestration độ khó/đối kháng). hard_case_policy dưới đây cấp NỘI DUNG ngữ nghĩa per-entity; xem registry_factor_map để biết factor nào notebook CHƯA hiện thực."
+    }
+  },
+  "_generated": "2026-06-23",
+  "_usage": "inject vào system prompt Bước 2/5/6/8. Đồng thời là nguồn truth để SINH giá trị (value_pool/builder) và để annotate/validate. Đọc 'generation_conventions' trước khi tích hợp.",
+  "_changelog": {
+    "from": "2.0.0",
+    "to": "2.5.0",
+    "summary": "Sửa regex đúng VN, chống sập giá trị (value_pool đa dạng), tách nhỏ tên/địa chỉ.",
+    "fixes": [
+      "driver_license: 12 SỐ THUẦN (2 mã tỉnh + 1 giới tính/thế kỷ + 2 năm sát hạch + 7 ngẫu nhiên). BỎ tiền tố 'GPLX' trong GIÁ TRỊ.",
+      "cccd: builder đúng (3 mã tỉnh 001-096 + 1 giới tính/thế kỷ + 2 năm sinh + 6 ngẫu nhiên); digit giới tính/năm sinh PHẢI suy từ dob+gender.",
+      "dob: validate nới (1-2 chữ số ngày/tháng), nhiều surface_form; ngày hợp lệ theo tháng (không chỉ 1-28).",
+      "political_view: value_pool đa dạng có trọng số (quần chúng/đoàn viên/đảng viên...) -> CHỐNG SẬP.",
+      "criminal_record: value_templates đa dạng (không án tích / tiền án + số bản án / xoá án tích / án treo...) -> CHỐNG SẬP.",
+      "health_status/family_relations/private_life/behavioral_data/location_data/digital_account/biometric/sexual_orientation: template_pool đa dạng.",
+      "passport_number: prefix thực tế (C đa số; B/N), tránh 'P' hash và số lặp.",
+      "phone/email/bank_account/vehicle_plate: thêm surface_form + validate thực tế (bank_account 6-19 số, không cố định 12)."
+    ],
+    "additions": [
+      "Tách tên: thêm given_name / family_name / middle_name / name_alias (top-level).",
+      "address: thêm place_components (số nhà/đường/thôn/phường/huyện/tỉnh) + roles.",
+      "Field mở rộng (_extended=true, bật/tắt được): tax_code, social_insurance_no, health_insurance_no."
+    ],
+    "notes": [
+      "cccd và driver_license ĐỀU 12 số -> regex thuần KHÔNG phân biệt; gán nhãn theo ngữ cảnh từ khoá.",
+      "Từ 2025: CCCD thay dần MST cá nhân & mã số BHXH; sau sáp nhập 2025 địa chỉ 2 cấp (xã/phường thuộc tỉnh)."
+    ]
+  },
+  "generation_conventions": {
+    "gen_strategy_enum": {
+      "structured": "Ghép từ thành phần theo 'builder' (cccd, driver_license, vehicle_plate, eid_credentials, health_insurance_no).",
+      "numeric": "Chuỗi số thuần theo độ dài (social_insurance_no...).",
+      "regex_template": "Sinh theo mẫu/regex (phone, email, passport, tax_code).",
+      "categorical": "Chọn từ value_pool theo weights (gender, marital_status, religion, nationality, ethnicity, sexual_orientation).",
+      "template_pool": "Chọn 1 template rồi điền placeholder (family_relations, health_status, private_life, behavioral_data, location_data, digital_account, political_view, criminal_record, biometric).",
+      "composed": "Tên ghép từ components, render nhiều surface_form (full_name).",
+      "free_text": "Văn bản tự do trong ngữ cảnh.",
+      "placeholder": "KHÔNG sinh giá trị thật (photo, ảnh CCCD trong eid_credentials, một phần biometric)."
+    },
+    "regex_conventions": {
+      "validate_regex": "NEO ^...$ — kiểm tra MỘT giá trị canonical (dùng B4 sanity-check).",
+      "detect_regex": "KHÔNG neo, có lookaround biên — match giá trị TRONG văn bản.",
+      "surface_forms": "Các cách giá trị hiện ra trong text. Khi đã render 1 surface_form thì locked value phải đúng bằng chuỗi đó."
+    },
+    "anti_collapse_rule": {
+      "applies_to": [
+        "political_view",
+        "criminal_record",
+        "health_status",
+        "family_relations",
+        "private_life",
+        "behavioral_data",
+        "location_data",
+        "digital_account",
+        "biometric",
+        "sexual_orientation"
+      ],
+      "rule": "Pipeline PHẢI sample từ value_pool/value_templates theo 'weights' và tôn trọng 'diversity'. KHÔNG hard-code 1 chuỗi cố định cho mọi profile (lỗi khiến political_view luôn = 'không khai báo...' và criminal_record luôn = 'không có án tích...'). Seed theo profile_id để tái lập nhưng vẫn đa dạng.",
+      "metrics": {
+        "max_share_per_value": "Tỉ lệ tối đa 1 giá trị trên dataset (mặc định 0.25).",
+        "min_unique_ratio": "unique/count tối thiểu (mặc định 0.6)."
+      }
+    },
+    "name_granularity": {
+      "rule": "full_name = họ + (chữ đệm) + tên + (tên gọi khác). Mỗi thành phần là field top-level RIÊNG để model học span khi form chỉ yêu cầu 'Tên' (given_name). Pipeline tách full_name -> family_name (token đầu, có thể họ kép), given_name (token cuối), middle_name (giữa). Form chỉ có ô 'Tên' -> chỉ render given_name.",
+      "surface_note": "Hỗ trợ viết HOA toàn bộ, viết tắt (N.V.A / NVA), dạng đảo 'An, Nguyễn Văn'."
+    },
+    "structured_id_consistency": {
+      "cccd": "province(3) khớp tỉnh address; digit giới tính/thế kỷ và 2 số năm sinh suy từ gender+dob.",
+      "driver_license": "province(2) = mã tỉnh 2 số (bỏ 0 đầu so với CCCD 3 số); digit giới tính/thế kỷ như CCCD; 2 số = năm sát hạch (>= năm sinh + 16).",
+      "collision_warning": "cccd và driver_license đều 12 số -> phân biệt bằng NGỮ CẢNH ('CCCD/số định danh' vs 'GPLX/giấy phép lái xe/bằng lái')."
+    },
+    "date_realization": {
+      "canonical": "D/M/YYYY (1-2 chữ số ngày/tháng).",
+      "rule": "Ngày hợp lệ theo tháng/năm nhuận. Có thể render 1 surface_form; locked value đúng bằng chuỗi đã render."
+    },
+    "integration_adapter": {
+      "where": "notebook CELL 4 — make_profile_fake() & add_legal_candidate_attributes()",
+      "rule": "THAY giá trị hard-code bằng đọc PII_META[name]['format'] rồi sample.",
+      "snippet": "def gen_value(name, profile, rng, PII_META):\n    fmt = (PII_META.get(name) or {}).get('format') or {}\n    strat = fmt.get('gen_strategy')\n    if strat in ('categorical','template_pool'):\n        pool = fmt.get('value_pool') or fmt.get('value_templates') or []\n        w = fmt.get('weights')\n        tmpl = weighted_choice(dict(zip(pool,w)), rng) if w else rng.choice(pool)\n        return fill_placeholders(tmpl, profile, rng, fmt.get('placeholders'))\n    if strat == 'structured':\n        return build_structured(name, fmt['builder'], profile, rng)  # cccd/gplx suy digit từ dob+gender\n    ...\n# => political_view, criminal_record... giờ ĐA DẠNG vì sample từ schema."
+    }
+  },
+  "fields": [
+    {
+      "field": "full_name",
+      "name_vi": "Họ, chữ đệm và tên khai sinh (và tên gọi khác)",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_dependent",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 1",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6,
+        8
+      ],
+      "note": "Tên đầy đủ = họ + chữ đệm + tên. Tách thành family_name/middle_name/given_name/name_alias để bao quát biểu mẫu chỉ điền 'Tên' hoặc 'Họ và chữ đệm'.",
+      "components": [
+        "family_name",
+        "middle_name",
+        "given_name",
+        "name_alias"
+      ],
+      "format": {
+        "gen_strategy": "composed",
+        "validate_regex": "^[A-ZÀ-Ỹ][a-zà-ỹA-ZÀ-Ỹ]+(?:\\s+[A-ZÀ-Ỹ][a-zà-ỹA-ZÀ-Ỹ]+){1,4}$",
+        "detect_regex": "(?<![\\wÀ-ỹ])[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\\s+[A-ZÀ-Ỹ][a-zà-ỹ]+){1,4}(?![\\wÀ-ỹ])",
+        "surface_forms": [
+          {
+            "name": "full_titlecase",
+            "regex": "[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\\s+[A-ZÀ-Ỹ][a-zà-ỹ]+){1,4}",
+            "example": "Nguyễn Văn An"
+          },
+          {
+            "name": "full_upper",
+            "regex": "[A-ZÀ-Ỹ]+(?:\\s+[A-ZÀ-Ỹ]+){1,4}",
+            "example": "NGUYỄN VĂN AN"
+          },
+          {
+            "name": "initials_dotted",
+            "regex": "(?:[A-ZÀ-Ỹ]\\.){1,3}[A-ZÀ-Ỹ][a-zà-ỹ]+",
+            "example": "N.V. An"
+          },
+          {
+            "name": "reversed_comma",
+            "regex": "[A-ZÀ-Ỹ][a-zà-ỹ]+,\\s*[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\\s+[A-ZÀ-Ỹ][a-zà-ỹ]+)*",
+            "example": "An, Nguyễn Văn"
+          }
+        ],
+        "examples_valid": [
+          "Nguyễn Văn An",
+          "Trần Thị Bích Hà",
+          "Hoàng Hữu Phúc"
+        ],
+        "examples_invalid": [
+          "nguyễn văn an (không viết hoa)",
+          "Nguyen Van An (mất dấu — chỉ chấp nhận nếu cố ý noise)"
+        ]
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "officer_name",
+          "street/ward name"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "typo",
+          "abbreviation",
+          "casing"
+        ],
+        "ood_examples": [
+          "John Smith",
+          "Giàng A Pao"
+        ],
+        "cooccur_group": "identity_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "family_name",
+      "name_vi": "Họ (và họ kép)",
+      "sensitivity": "PII",
+      "identifier_type": "indirect",
+      "context_dependency": "context_dependent",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 1",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6,
+        8
+      ],
+      "derive_from": "full_name",
+      "parent": "full_name",
+      "note": "Token họ đứng đầu, có thể họ kép (Nguyễn Hoàng, Tôn Nữ). Riêng lẻ rất phổ biến -> gián tiếp.",
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool_ref": "profile_core.ho",
+        "validate_regex": "^[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\\s+[A-ZÀ-Ỹ][a-zà-ỹ]+)?$",
+        "detect_regex": "(?<![\\wÀ-ỹ])(Nguyễn|Trần|Lê|Phạm|Hoàng|Huỳnh|Phan|Vũ|Võ|Đặng|Bùi|Đỗ|Hồ|Ngô|Dương|Lý)(?![\\wÀ-ỹ])",
+        "examples_valid": [
+          "Nguyễn",
+          "Trần",
+          "Nguyễn Hoàng",
+          "Tôn Nữ"
+        ],
+        "examples_invalid": [
+          "An (đây là tên)"
+        ]
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "given_name khi đứng riêng",
+          "địa danh mang họ"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "typo",
+          "casing"
+        ],
+        "ood_examples": [
+          "họ nước ngoài",
+          "họ dân tộc (Giàng, Lò, Niê)"
+        ],
+        "cooccur_group": "identity_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "middle_name",
+      "name_vi": "Chữ đệm / tên đệm",
+      "sensitivity": "PII",
+      "identifier_type": "indirect",
+      "context_dependency": "context_dependent",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 1",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": false,
+      "pipeline_steps": [
+        6,
+        8
+      ],
+      "derive_from": "full_name",
+      "parent": "full_name",
+      "note": "Phần giữa họ và tên (Văn, Thị, Hữu, 'Từ Anh'...). Có thể rỗng hoặc nhiều token. Yếu về định danh.",
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool": [
+          "Văn",
+          "Thị",
+          "Hữu",
+          "Đức",
+          "Ngọc",
+          "Thành",
+          "Minh",
+          "Thanh",
+          "Xuân",
+          "Quang",
+          "Gia",
+          "Khánh",
+          "Phương",
+          "Hoài",
+          "Bảo"
+        ],
+        "validate_regex": "^(?:[A-ZÀ-Ỹ][a-zà-ỹ]+)(?:\\s+[A-ZÀ-Ỹ][a-zà-ỹ]+)*$",
+        "examples_valid": [
+          "Văn",
+          "Thị",
+          "Hữu",
+          "Thị Bích",
+          "Từ Anh"
+        ],
+        "examples_invalid": [
+          ""
+        ]
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "given_name",
+      "name_vi": "Tên (tên gọi chính)",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_dependent",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 1",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        6,
+        8
+      ],
+      "derive_from": "full_name",
+      "parent": "full_name",
+      "note": "Token TÊN (thường cuối). Hay xuất hiện đơn lẻ trong ô 'Tên' của biểu mẫu.",
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool_ref": "profile_core.ten",
+        "validate_regex": "^[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\\s+[A-ZÀ-Ỹ][a-zà-ỹ]+)?$",
+        "detect_regex": "(?<![\\wÀ-ỹ])[A-ZÀ-Ỹ][a-zà-ỹ]+(?![\\wÀ-ỹ])",
+        "examples_valid": [
+          "An",
+          "Phúc",
+          "Bích Hà",
+          "Nguyên"
+        ],
+        "examples_invalid": [
+          "Nguyễn (đây là họ)"
+        ]
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "family_name khi đứng riêng",
+          "tên cán bộ xử lý"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "typo"
+        ],
+        "ood_examples": [
+          "tên nước ngoài",
+          "tên ghép dài"
+        ],
+        "cooccur_group": "identity_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "name_alias",
+      "name_vi": "Tên gọi khác / bí danh / bút danh",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_dependent",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 1",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": false,
+      "pipeline_steps": [
+        5,
+        8
+      ],
+      "note": "Tên thường gọi, bí danh, pháp danh, nghệ danh — Điều 3 khoản 1 'tên gọi khác (nếu có)'.",
+      "format": {
+        "gen_strategy": "template_pool",
+        "value_templates": [
+          "thường gọi là {given_name}",
+          "bí danh {alias}",
+          "pháp danh {dharma}",
+          "nghệ danh {stage}",
+          "tên gọi khác: {alias}"
+        ],
+        "placeholders": {
+          "{alias}": {
+            "type": "given_name_like"
+          },
+          "{dharma}": {
+            "pool": [
+              "Thích Tâm An",
+              "Diệu Hạnh",
+              "Chân Pháp"
+            ]
+          },
+          "{stage}": {
+            "type": "given_name_like"
+          }
+        },
+        "examples_valid": [
+          "thường gọi là Tư",
+          "pháp danh Diệu Hạnh"
+        ]
+      },
+      "gen_mode": "bank_rewrite",
+      "llm_generate_prob": 0.3
+    },
+    {
+      "field": "dob",
+      "name_vi": "Ngày, tháng, năm sinh (hoặc ngày mất/mất tích)",
+      "sensitivity": "PII",
+      "identifier_type": "indirect",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 2",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6,
+        7,
+        8
+      ],
+      "note": "Canonical D/M/YYYY. Ngày mất/mất tích cũng thuộc trường này. Ngày hợp lệ theo tháng (1-28/29/30/31).",
+      "format": {
+        "gen_strategy": "date",
+        "canonical": "D/M/YYYY",
+        "validate_regex": "^\\d{1,2}/\\d{1,2}/\\d{4}$",
+        "detect_regex": "(?<!\\d)\\d{1,2}\\s*[/\\.-]\\s*\\d{1,2}\\s*[/\\.-]\\s*\\d{4}(?!\\d)",
+        "surface_forms": [
+          {
+            "name": "slash",
+            "regex": "(?<!\\d)\\d{1,2}/\\d{1,2}/\\d{4}(?!\\d)",
+            "example": "21/02/1984"
+          },
+          {
+            "name": "dash",
+            "regex": "(?<!\\d)\\d{1,2}-\\d{1,2}-\\d{4}(?!\\d)",
+            "example": "21-02-1984"
+          },
+          {
+            "name": "dot",
+            "regex": "(?<!\\d)\\d{1,2}\\.\\d{1,2}\\.\\d{4}(?!\\d)",
+            "example": "21.02.1984"
+          },
+          {
+            "name": "vietnamese_full",
+            "regex": "ngày\\s+\\d{1,2}\\s+tháng\\s+\\d{1,2}\\s+năm\\s+\\d{4}",
+            "example": "ngày 21 tháng 02 năm 1984"
+          },
+          {
+            "name": "month_year",
+            "regex": "tháng\\s+\\d{1,2}\\s+năm\\s+\\d{4}",
+            "example": "tháng 02 năm 1984"
+          },
+          {
+            "name": "year_only",
+            "regex": "(sinh\\s+)?năm\\s+\\d{4}",
+            "example": "sinh năm 1984"
+          },
+          {
+            "name": "iso",
+            "regex": "(?<!\\d)\\d{4}-\\d{2}-\\d{2}(?!\\d)",
+            "example": "1984-02-21"
+          }
+        ],
+        "realize_variants": true,
+        "constraints": {
+          "year_range": [
+            1920,
+            2025
+          ],
+          "day_must_be_valid_for_month": true
+        },
+        "examples_valid": [
+          "21/02/1984",
+          "ngày 09 tháng 12 năm 2001",
+          "sinh năm 1975"
+        ],
+        "examples_invalid": [
+          "31/02/1984 (29-31/02 không tồn tại)",
+          "21/13/1984 (tháng 13)"
+        ],
+        "disambiguation": "Ngày tiếp nhận/hẹn trả kết quả KHÔNG phải dob — xem distractor 'received_date'."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "received_date",
+          "appointment_date",
+          "issue_date",
+          "signing_date",
+          "dob@other"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "separator_drift",
+          "abbreviation"
+        ],
+        "ood_examples": [
+          "1925",
+          "29/02/2000",
+          "chỉ năm"
+        ],
+        "cooccur_group": "identity_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "gender",
+      "name_vi": "Giới tính",
+      "sensitivity": "PII",
+      "identifier_type": "indirect",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 3",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6
+      ],
+      "allowed_values": [
+        "Nam",
+        "Nữ",
+        "Khác"
+      ],
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool": [
+          "Nam",
+          "Nữ",
+          "Khác"
+        ],
+        "weights": [
+          0.49,
+          0.49,
+          0.02
+        ],
+        "surface_forms": [
+          {
+            "name": "word",
+            "regex": "\\b(Nam|Nữ|Khác)\\b",
+            "example": "Nữ"
+          },
+          {
+            "name": "labeled",
+            "regex": "giới tính\\s*:?\\s*(Nam|Nữ|Khác)",
+            "example": "Giới tính: Nam"
+          }
+        ],
+        "note": "Dùng để suy chữ số giới tính/thế kỷ của cccd & driver_license."
+      },
+      "hard_cases": {
+        "confusable_with": [],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "casing"
+        ],
+        "cooccur_group": "identity_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "address",
+      "name_vi": "Địa chỉ (thường trú, tạm trú, hiện tại, quê quán, nơi sinh, liên hệ)",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_dependent",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 4",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6,
+        8
+      ],
+      "note": "Địa chỉ đầy đủ định danh trực tiếp; chung cư nhiều hộ cần kết hợp. Đã thêm place_components & roles.",
+      "sub_fields": [
+        "birth_place",
+        "permanent_address",
+        "temporary_address",
+        "current_address",
+        "hometown",
+        "contact_address"
+      ],
+      "roles": {
+        "permanent_address": "Nơi đăng ký thường trú",
+        "temporary_address": "Nơi đăng ký tạm trú",
+        "current_address": "Nơi ở hiện tại",
+        "hometown": "Quê quán",
+        "birth_place": "Nơi sinh / nơi đăng ký khai sinh",
+        "contact_address": "Địa chỉ liên hệ"
+      },
+      "place_components": [
+        {
+          "part": "house_number",
+          "name_vi": "Số nhà",
+          "identifier_type": "indirect",
+          "context_dependency": "context_dependent",
+          "regex": "(số\\s+)?\\d{1,4}[A-Za-z]?(/\\d{1,3}[A-Za-z]?)*",
+          "example": "số 12/3A"
+        },
+        {
+          "part": "street",
+          "name_vi": "Đường/Phố/Ngõ/Tổ",
+          "identifier_type": "indirect",
+          "context_dependency": "context_dependent",
+          "regex": "(đường|phố|ngõ|ngách|tổ|khu phố)\\s+[\\wÀ-ỹ0-9 ]+",
+          "example": "đường Lê Lợi"
+        },
+        {
+          "part": "hamlet",
+          "name_vi": "Thôn/Xóm/Ấp/Bản/Buôn/Khu phố",
+          "identifier_type": "indirect",
+          "context_dependency": "context_dependent",
+          "regex": "(thôn|xóm|ấp|bản|buôn|sóc|khu phố|tổ dân phố)\\s+[\\wÀ-ỹ0-9 ]+",
+          "example": "thôn Đoài"
+        },
+        {
+          "part": "ward",
+          "name_vi": "Phường/Xã/Thị trấn",
+          "identifier_type": "indirect",
+          "context_dependency": "context_dependent",
+          "regex": "(phường|xã|thị trấn)\\s+[\\wÀ-ỹ0-9 ]+",
+          "example": "phường Dịch Vọng"
+        },
+        {
+          "part": "district",
+          "name_vi": "Quận/Huyện/Thị xã (cấp huyện — tuỳ chọn sau sáp nhập 2025)",
+          "identifier_type": "indirect",
+          "context_dependency": "context_dependent",
+          "regex": "(quận|huyện|thị xã)\\s+[\\wÀ-ỹ0-9 ]+",
+          "example": "quận Cầu Giấy",
+          "legacy": true
+        },
+        {
+          "part": "province",
+          "name_vi": "Tỉnh/Thành phố trực thuộc TW",
+          "identifier_type": "indirect",
+          "context_dependency": "context_dependent",
+          "regex": "(tỉnh|thành phố)\\s+[\\wÀ-ỹ ]+",
+          "example": "thành phố Hà Nội"
+        }
+      ],
+      "format": {
+        "gen_strategy": "composed",
+        "value_pool_ref": "profile_core.dia_danh + extended_places",
+        "structure_new_2025": "[số nhà, đường] + phường/xã + tỉnh/thành phố",
+        "structure_legacy": "[số nhà, đường] + phường/xã + quận/huyện + tỉnh/thành phố",
+        "detect_regex": "(số\\s*\\d|đường|phố|thôn|xóm|ấp|bản|phường|xã|thị trấn|quận|huyện|tỉnh|thành phố)[\\wÀ-ỹ0-9 ,./-]+",
+        "examples_valid": [
+          "Số 12/3A đường Lê Lợi, phường Dịch Vọng, thành phố Hà Nội",
+          "Thôn Đoài, xã Tân Hội, tỉnh Hưng Yên"
+        ],
+        "disambiguation": "Địa chỉ CƠ QUAN tiếp nhận KHÔNG phải địa chỉ cá nhân; location_data (định vị) khác address (cư trú tĩnh)."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "agency_address",
+          "location_data"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "abbreviation",
+          "typo"
+        ],
+        "ood_examples": [
+          "2 cấp (không quận/huyện)",
+          "Trường Sa",
+          "địa chỉ nước ngoài"
+        ],
+        "cooccur_group": "contact_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "nationality",
+      "name_vi": "Quốc tịch",
+      "sensitivity": "PII",
+      "identifier_type": "indirect",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 5",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6
+      ],
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool": [
+          "Việt Nam",
+          "Hoa Kỳ",
+          "Hàn Quốc",
+          "Nhật Bản",
+          "Trung Quốc",
+          "Lào",
+          "Campuchia",
+          "Pháp",
+          "Úc"
+        ],
+        "weights": [
+          0.93,
+          0.01,
+          0.01,
+          0.01,
+          0.01,
+          0.01,
+          0.005,
+          0.005,
+          0.01
+        ],
+        "surface_forms": [
+          {
+            "name": "vi",
+            "regex": "quốc tịch\\s*:?\\s*[\\wÀ-ỹ ]+",
+            "example": "Quốc tịch: Việt Nam"
+          },
+          {
+            "name": "plain",
+            "regex": "\\b(Việt Nam|Vietnamese|VN)\\b",
+            "example": "Việt Nam"
+          }
+        ]
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "photo",
+      "name_vi": "Hình ảnh cá nhân",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 6",
+      "inject_type": "static",
+      "source": null,
+      "locked": false,
+      "pipeline_steps": [
+        6
+      ],
+      "note": "Pipeline văn bản không sinh ảnh; chỉ tham chiếu tên file/mô tả nếu form yêu cầu.",
+      "format": {
+        "gen_strategy": "placeholder",
+        "value_templates": [
+          "ảnh chân dung 4x6 nền trắng",
+          "ảnh thẻ 3x4",
+          "[ẢNH_CHÂN_DUNG]",
+          "tệp ảnh {slug}_4x6.jpg"
+        ],
+        "examples_valid": [
+          "ảnh chân dung 4x6 nền trắng",
+          "[ẢNH_CHÂN_DUNG]"
+        ]
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "phone",
+      "name_vi": "Số điện thoại",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 7",
+      "inject_type": "both",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        8
+      ],
+      "note": "Di động VN: 0 + (3|5|7|8|9) + 8 số. Cố định: 0 + mã vùng. Quốc tế: +<mã>.",
+      "format": {
+        "gen_strategy": "regex_template",
+        "value_pool_ref": "profile_core.phone_prefix_by_carrier / intl_phone_codes",
+        "validate_regex": "^(0(3|5|7|8|9)\\d{8}|0(2\\d{1,2})\\d{6,7}|\\+\\d{6,15})$",
+        "detect_regex": "(?<!\\d)(?:\\+?84|0)\\s?\\d{2,3}[.\\s]?\\d{3}[.\\s]?\\d{3,4}(?!\\d)",
+        "surface_forms": [
+          {
+            "name": "mobile_plain",
+            "regex": "(?<!\\d)0(3|5|7|8|9)\\d{8}(?!\\d)",
+            "example": "0987654321"
+          },
+          {
+            "name": "mobile_grouped",
+            "regex": "(?<!\\d)0\\d{2,3}[.\\s]\\d{3}[.\\s]\\d{3,4}(?!\\d)",
+            "example": "098.765.4321"
+          },
+          {
+            "name": "intl_84",
+            "regex": "\\+84\\s?\\d{9}",
+            "example": "+84 987654321"
+          },
+          {
+            "name": "landline",
+            "regex": "(?<!\\d)0\\d{1,2}[.\\s-]?\\d{7,8}(?!\\d)",
+            "example": "024 38256789"
+          },
+          {
+            "name": "intl_other",
+            "regex": "\\+\\d{1,3}\\s?\\d{4,14}",
+            "example": "+1 2025550143"
+          }
+        ],
+        "examples_valid": [
+          "0987654321",
+          "0912 345 678",
+          "+84 912345678",
+          "024 38256789"
+        ],
+        "examples_invalid": [
+          "098765432 (9 số, thiếu)",
+          "0123456789 (đầu 01x không còn cấp)"
+        ],
+        "disambiguation": "Số tổng đài/cơ quan KHÔNG phải số cá nhân; phân biệt với cccd/gplx (12 số)."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "hotline 1900/1800",
+          "agency_landline",
+          "document_number_10"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "separator_drift",
+          "spacing_glue"
+        ],
+        "ood_examples": [
+          "+82...",
+          "mã vùng hiếm"
+        ],
+        "cooccur_group": "contact_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "cccd",
+      "name_vi": "Số định danh cá nhân (CCCD/CMND)",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 7",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        3,
+        6,
+        7,
+        8
+      ],
+      "note": "12 số: 3 mã tỉnh (001-096) + 1 giới tính/thế kỷ + 2 năm sinh + 6 ngẫu nhiên. Chữ số giới tính/thế kỷ và 2 số năm sinh PHẢI suy từ gender+dob. CMND cũ 9 số là legacy.",
+      "format": {
+        "gen_strategy": "structured",
+        "validate_regex": "^(00[1-9]|0[1-8][0-9]|09[0-6])[0-9]\\d{2}\\d{6}$",
+        "validate_regex_loose": "^(00[1-9]|0[1-8][0-9]|09[0-6])\\d{9}$",
+        "validate_cmnd_legacy": "^\\d{9}$",
+        "detect_regex": "(?<!\\d)\\d{12}(?!\\d)",
+        "builder": [
+          {
+            "part": "province_code",
+            "length": 3,
+            "source": "profile_core.ma_tinh_cccd",
+            "range": "001-096",
+            "consistency": "khớp tỉnh trong address",
+            "note": "63 tỉnh/thành"
+          },
+          {
+            "part": "century_gender",
+            "length": 1,
+            "derive_from": [
+              "gender",
+              "dob.year"
+            ],
+            "map": {
+              "Nam_19xx": "0",
+              "Nu_19xx": "1",
+              "Nam_20xx": "2",
+              "Nu_20xx": "3",
+              "Nam_21xx": "4",
+              "Nu_21xx": "5"
+            },
+            "note": "Suy từ thế kỷ sinh + giới tính"
+          },
+          {
+            "part": "birth_year_2digit",
+            "length": 2,
+            "derive_from": [
+              "dob.year"
+            ],
+            "rule": "= 2 chữ số cuối của năm sinh (PHẢI khớp dob)"
+          },
+          {
+            "part": "sequence",
+            "length": 6,
+            "source": "random",
+            "note": "ngẫu nhiên, tránh chuỗi quá 'sạch' (000000, 123456)"
+          }
+        ],
+        "surface_forms": [
+          {
+            "name": "continuous",
+            "regex": "(?<!\\d)\\d{12}(?!\\d)",
+            "example": "038085001037"
+          },
+          {
+            "name": "grouped_4",
+            "regex": "(?<!\\d)\\d{4}[\\s.]\\d{4}[\\s.]\\d{4}(?!\\d)",
+            "example": "0380 8500 1037"
+          },
+          {
+            "name": "grouped_struct",
+            "regex": "(?<!\\d)\\d{3}[\\s.]\\d[\\s.]\\d{2}[\\s.]\\d{6}(?!\\d)",
+            "example": "038 0 85 001037"
+          }
+        ],
+        "examples_valid": [
+          "038085001037 (038=tỉnh, 0=Nam TK20, 85=1985, 001037)",
+          "001301123456 (001=Hà Nội, 3=Nữ TK21, 01=2001, 123456)"
+        ],
+        "examples_invalid": [
+          "086154255890 (3 số đầu hợp lệ nhưng giới tính/năm KHÔNG khớp dob — lỗi sinh ngẫu nhiên hiện tại)",
+          "099085001037 (mã tỉnh 099 > 096)",
+          "GPLX028036263 (có chữ — lỗi driver_license cũ)",
+          "12345678901 (11 số)"
+        ],
+        "diversity": {
+          "anti_collapse": false,
+          "note": "Có cấu trúc; chỉ cần phân phối tỉnh khớp address và digit khớp dob/gender."
+        },
+        "collision_warning": "Trùng độ dài driver_license (12 số) -> phân biệt bằng ngữ cảnh từ khoá."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "receipt_code_12",
+          "procedure_code",
+          "driver_license(12)",
+          "bhxh/mst/bhyt(10)"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "separator_drift",
+          "spacing_glue"
+        ],
+        "ood_examples": [
+          "CMND 9 số",
+          "mã tỉnh 096",
+          "người nước ngoài không CCCD"
+        ],
+        "cooccur_group": "document_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "passport_number",
+      "name_vi": "Số hộ chiếu",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 7",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6,
+        7,
+        8
+      ],
+      "note": "8 ký tự: 1 chữ in hoa + 7 số. C=phổ thông (đa số), B=công vụ, N=ngoại giao.",
+      "format": {
+        "gen_strategy": "regex_template",
+        "validate_regex": "^[A-Z]\\d{7}$",
+        "detect_regex": "(?<![A-Z0-9])[A-Z]\\d{7}(?![0-9A-Z])",
+        "prefix_pool": [
+          "C",
+          "B",
+          "N",
+          "P",
+          "K"
+        ],
+        "prefix_weights": [
+          0.85,
+          0.05,
+          0.03,
+          0.04,
+          0.03
+        ],
+        "surface_forms": [
+          {
+            "name": "plain",
+            "regex": "(?<![A-Z0-9])[A-Z]\\d{7}(?![0-9])",
+            "example": "C1234567"
+          }
+        ],
+        "examples_valid": [
+          "C1234567",
+          "B9876543",
+          "N1029384"
+        ],
+        "examples_invalid": [
+          "P4444642 (đúng format nhưng số lặp/không thực tế — nên tránh)",
+          "C123456 (6 số)"
+        ],
+        "gen_note": "Tránh chuỗi số lặp như 4444xxx."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "mã 1 chữ+7 số khác"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "spacing_glue"
+        ],
+        "ood_examples": [
+          "hộ chiếu nước ngoài"
+        ],
+        "cooccur_group": "document_block"
+      },
+      "gen_mode": "optional_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "driver_license",
+      "name_vi": "Số giấy phép lái xe",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 7",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": true,
+      "pipeline_steps": [
+        8
+      ],
+      "note": "THÊM so với NĐ13. GPLX thẻ PET = 12 SỐ THUẦN: 2 mã tỉnh + 1 giới tính/thế kỷ + 2 năm sát hạch + 7 ngẫu nhiên. TUYỆT ĐỐI không nhúng 'GPLX' vào GIÁ TRỊ — 'GPLX' chỉ là nhãn đứng trước số trong văn bản.",
+      "format": {
+        "gen_strategy": "structured",
+        "validate_regex": "^(0[1-9]|[1-8][0-9]|9[0-6])[0-3]\\d{2}\\d{7}$",
+        "validate_regex_loose": "^\\d{12}$",
+        "detect_regex": "(?<!\\d)\\d{12}(?!\\d)",
+        "builder": [
+          {
+            "part": "province_code",
+            "length": 2,
+            "source": "profile_core.ma_tinh_cccd (2 số)",
+            "range": "01-96",
+            "note": "2 chữ số (bỏ 0 đầu so với mã CCCD 3 số). VD HCM=79, Hà Nội=01"
+          },
+          {
+            "part": "century_gender",
+            "length": 1,
+            "derive_from": [
+              "gender",
+              "dob.year"
+            ],
+            "map": {
+              "Nam_19xx": "0",
+              "Nu_19xx": "1",
+              "Nam_20xx": "2",
+              "Nu_20xx": "3"
+            }
+          },
+          {
+            "part": "exam_year_2digit",
+            "length": 2,
+            "derive_from": [
+              "dob.year"
+            ],
+            "rule": "2 số cuối NĂM SÁT HẠCH, >= (năm sinh + 16), <= năm hiện tại"
+          },
+          {
+            "part": "sequence",
+            "length": 7,
+            "source": "random"
+          }
+        ],
+        "surface_forms": [
+          {
+            "name": "continuous",
+            "regex": "(?<!\\d)\\d{12}(?!\\d)",
+            "example": "771195002226"
+          },
+          {
+            "name": "labeled_in_text",
+            "regex": "(?:GPLX|giấy phép lái xe|bằng lái)\\s*(?:số|:)?\\s*\\d{12}",
+            "example": "GPLX số 771195002226",
+            "note": "Nhãn 'GPLX' KHÔNG nằm trong span giá trị"
+          }
+        ],
+        "examples_valid": [
+          "771195002226 (77=tỉnh, 1=Nữ TK20, 19=sát hạch 2019, 5002226)",
+          "010220123456 (01=Hà Nội, 0=Nam TK20, 22=2022, 0123456)"
+        ],
+        "examples_invalid": [
+          "GPLX028036263 (CÓ CHỮ + sai độ dài — lỗi hiện tại)",
+          "GPLX0123... (không tiền tố chữ trong giá trị)",
+          "7711950022 (10 số)"
+        ],
+        "diversity": {
+          "anti_collapse": false
+        },
+        "collision_warning": "Trùng 12 số với cccd -> chỉ phân biệt bằng ngữ cảnh ('giấy phép lái xe'/'GPLX'/'bằng lái').",
+        "note_century_gender": "Digit thứ 3: Nam TK20=0, Nữ TK20=1, Nam TK21=2, Nữ TK21=3."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "cccd(12)",
+          "receipt_code_12"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "separator_drift"
+        ],
+        "cooccur_group": "document_block"
+      },
+      "gen_mode": "optional_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "vehicle_plate",
+      "name_vi": "Số biển số xe",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 7",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": true,
+      "pipeline_steps": [
+        8
+      ],
+      "note": "THÊM so với NĐ13. Nhiều định dạng: ô tô 30A-123.45 / 30A-12345; mô tô 29-B1 234.56 / 92H1-456.78; cũ 30A-1234.",
+      "format": {
+        "gen_strategy": "structured",
+        "value_pool_ref": "profile_core.ma_bien_xe",
+        "validate_regex": "^\\d{2}[-\\s]?[A-Z]\\d?[-\\s]?\\d{3}\\.?\\d{2,3}$",
+        "detect_regex": "(?<![\\w])\\d{2}[-\\s]?[A-Z]\\d?[-\\s]?\\d{3}[.\\s]?\\d{2,3}(?![\\w])",
+        "builder": [
+          {
+            "part": "province_code",
+            "length": 2,
+            "source": "profile_core.ma_bien_xe",
+            "note": "VD Hà Nội 29-33, HCM 41/50-59, Lạng Sơn 12"
+          },
+          {
+            "part": "series_letter",
+            "length": 1,
+            "values": "A-Z",
+            "note": "Sê-ri đăng ký; xe điện có sê-ri riêng"
+          },
+          {
+            "part": "series_digit",
+            "length": "0-1",
+            "note": "Mô tô có thêm 1 số sau chữ (B1, H1...)"
+          },
+          {
+            "part": "serial",
+            "length": "4-5",
+            "note": "4-5 số, thường nhóm '.' 2 số cuối"
+          }
+        ],
+        "surface_forms": [
+          {
+            "name": "car_dot",
+            "regex": "\\d{2}[A-Z]-\\d{3}\\.\\d{2}",
+            "example": "30A-123.45"
+          },
+          {
+            "name": "car_plain",
+            "regex": "\\d{2}[A-Z]-\\d{4,5}",
+            "example": "30A-12345"
+          },
+          {
+            "name": "moto",
+            "regex": "\\d{2}[-\\s]?[A-Z]\\d[-\\s]?\\d{3}\\.\\d{2}",
+            "example": "29-B1 234.56"
+          },
+          {
+            "name": "old",
+            "regex": "\\d{2}[A-Z]-\\d{4}",
+            "example": "30A-1234"
+          }
+        ],
+        "examples_valid": [
+          "30A-123.45",
+          "51F-678.90",
+          "29-B1 234.56",
+          "92H1-456.78"
+        ],
+        "examples_invalid": [
+          "18A-50023 (chấp nhận nhưng nên nhóm chuẩn có dấu chấm)",
+          "biển số nằm trong ngữ cảnh tài khoản"
+        ]
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "room/booth code (30A)"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "separator_drift",
+          "casing"
+        ],
+        "ood_examples": [
+          "biển NG/NN",
+          "biển xanh xe điện"
+        ],
+        "cooccur_group": "document_block"
+      },
+      "gen_mode": "optional_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "marital_status",
+      "name_vi": "Tình trạng hôn nhân",
+      "sensitivity": "PII",
+      "identifier_type": "indirect",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 8",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6
+      ],
+      "allowed_values": [
+        "Độc thân",
+        "Đã kết hôn",
+        "Ly hôn",
+        "Góa"
+      ],
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool": [
+          "Độc thân",
+          "Đã kết hôn",
+          "Ly hôn",
+          "Góa",
+          "Chưa kết hôn",
+          "Đã ly hôn",
+          "Góa vợ",
+          "Góa chồng",
+          "Ly thân"
+        ],
+        "weights": [
+          0.3,
+          0.45,
+          0.07,
+          0.05,
+          0.06,
+          0.02,
+          0.02,
+          0.02,
+          0.01
+        ],
+        "consistency": "Khớp tuổi theo profile_core.hon_nhan_by_age (dưới 22 hiếm 'Góa').",
+        "surface_forms": [
+          {
+            "name": "labeled",
+            "regex": "tình trạng hôn nhân\\s*:?\\s*[\\wÀ-ỹ ]+",
+            "example": "Tình trạng hôn nhân: Đã kết hôn"
+          },
+          {
+            "name": "plain",
+            "regex": "\\b(Độc thân|Đã kết hôn|Ly hôn|Góa|Chưa kết hôn|Ly thân)\\b",
+            "example": "Độc thân"
+          }
+        ],
+        "disambiguation": "'Độc thân/Góa/Ly hôn' phải trong ngữ cảnh hôn nhân."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "'độc thân/góa' ngữ cảnh phi hôn nhân"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent"
+        ],
+        "cooccur_group": "identity_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.1
+    },
+    {
+      "field": "family_relations",
+      "name_vi": "Thông tin mối quan hệ gia đình (cha mẹ, con, vợ/chồng)",
+      "sensitivity": "PII",
+      "identifier_type": "indirect",
+      "context_dependency": "context_dependent",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 9",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": false,
+      "pipeline_steps": [
+        5,
+        8
+      ],
+      "note": "Quasi-identifier kết hợp ngữ cảnh. ĐA DẠNG HOÁ template (cha/mẹ/vợ/chồng/con/anh/chị/em/giám hộ).",
+      "format": {
+        "gen_strategy": "template_pool",
+        "value_templates": [
+          "cha là {name}",
+          "mẹ là {name}",
+          "vợ là {name}",
+          "chồng là {name}",
+          "con trai là {name}",
+          "con gái là {name}",
+          "con là {name}, sinh năm {year}",
+          "anh trai là {name}",
+          "chị gái là {name}",
+          "em ruột là {name}",
+          "người giám hộ là {name}",
+          "người liên hệ khẩn cấp là {relation} {name}, số điện thoại {phone}",
+          "mẹ là {name}, hiện thường trú tại {place}"
+        ],
+        "placeholders": {
+          "{name}": {
+            "type": "full_name_like"
+          },
+          "{relation}": {
+            "pool": [
+              "cha",
+              "mẹ",
+              "vợ",
+              "chồng",
+              "anh trai",
+              "chị gái",
+              "con gái",
+              "con trai",
+              "cô",
+              "chú",
+              "bác"
+            ]
+          },
+          "{year}": {
+            "type": "year",
+            "range": [
+              1950,
+              2020
+            ]
+          },
+          "{phone}": {
+            "type": "phone"
+          },
+          "{place}": {
+            "type": "address_short"
+          }
+        },
+        "diversity": {
+          "anti_collapse": true,
+          "max_share_per_value": 0.15,
+          "min_unique_ratio": 0.7
+        },
+        "examples_valid": [
+          "cha là Nguyễn Văn Bình",
+          "người liên hệ khẩn cấp là chị gái Trần Thị Mai, số điện thoại 0912345678"
+        ],
+        "note_pii": "Tên/SĐT người thân nhúng trong template là PII RIÊNG (annotate riêng nếu xuất hiện)."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "tên/SĐT thân nhân là PII RIÊNG"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "typo"
+        ],
+        "cooccur_group": "identity_block"
+      },
+      "gen_mode": "bank_rewrite",
+      "llm_generate_prob": 0.3
+    },
+    {
+      "field": "digital_account",
+      "name_vi": "Thông tin tài khoản số (MXH/ứng dụng — KHÔNG gồm ngân hàng)",
+      "sensitivity": "PII",
+      "identifier_type": "indirect",
+      "context_dependency": "context_dependent",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 10",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": true,
+      "pipeline_steps": [
+        8
+      ],
+      "note": "TÁCH so với NĐ13: TK ngân hàng nay SPI (bank_account). Đây là username/handle MXH, app dịch vụ công...",
+      "format": {
+        "gen_strategy": "template_pool",
+        "value_templates": [
+          "{slug}",
+          "{slug}.{digits3}",
+          "@{slug}",
+          "{slug}{digits2}",
+          "tài khoản Zalo {phone}",
+          "Facebook: fb.com/{slug}",
+          "tài khoản dịch vụ công {slug}",
+          "tài khoản VssID {ten_dang_nhap}"
+        ],
+        "placeholders": {
+          "{slug}": {
+            "type": "ascii_slug_from_name"
+          },
+          "{digits3}": {
+            "type": "digits",
+            "len": 3
+          },
+          "{digits2}": {
+            "type": "digits",
+            "len": 2
+          },
+          "{phone}": {
+            "type": "phone"
+          },
+          "{ten_dang_nhap}": {
+            "type": "phone_or_cccd"
+          }
+        },
+        "validate_regex": "^[A-Za-z0-9._@/-]{3,}$",
+        "detect_regex": "@[A-Za-z0-9._]{2,}|fb\\.com/[A-Za-z0-9._]+",
+        "examples_valid": [
+          "thaihuuphuc.122",
+          "@phuc.thai",
+          "Facebook: fb.com/phuc.thai"
+        ],
+        "disambiguation": "KHÔNG nhầm với số tài khoản ngân hàng (bank_account)."
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.3
+    },
+    {
+      "field": "email",
+      "name_vi": "Email cá nhân",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 10",
+      "inject_type": "dynamic",
+      "source": "injection_list",
+      "locked": true,
+      "pipeline_steps": [
+        8
+      ],
+      "note": "Dạng ten.ho@domain. Domain theo profile_core.email_domains.",
+      "format": {
+        "gen_strategy": "regex_template",
+        "value_pool_ref": "profile_core.email_domains",
+        "validate_regex": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+        "detect_regex": "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+        "value_templates": [
+          "{slug}@gmail.com",
+          "{slug}.{digits2}@gmail.com",
+          "{slug}@{edu}.edu.vn",
+          "{slug}@{agency}.gov.vn"
+        ],
+        "surface_forms": [
+          {
+            "name": "plain",
+            "regex": "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+            "example": "phuc.thai@gmail.com"
+          },
+          {
+            "name": "obfuscated",
+            "regex": "[a-zA-Z0-9._%+-]+\\s*(?:\\[at\\]|\\(at\\))\\s*[a-zA-Z0-9.-]+",
+            "example": "phuc.thai [at] gmail.com"
+          }
+        ],
+        "examples_valid": [
+          "phuc.thai@gmail.com",
+          "nguyenvanan2001@gmail.com",
+          "an.nv@vnu.edu.vn"
+        ],
+        "examples_invalid": [
+          "phuc.thai@ (thiếu domain)"
+        ]
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "agency email"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "typo",
+          "spacing_glue"
+        ],
+        "cooccur_group": "contact_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "ethnicity",
+      "name_vi": "Dân tộc, nguồn gốc chủng tộc",
+      "sensitivity": "SPI",
+      "identifier_type": "indirect",
+      "context_dependency": "context_free",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1a",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6,
+        8
+      ],
+      "note": "54 dân tộc VN. Phân phối theo vùng. Thuộc tính nhạy cảm bản chất.",
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool_ref": "profile_core.dan_toc",
+        "surface_forms": [
+          {
+            "name": "labeled",
+            "regex": "dân tộc\\s*:?\\s*[\\wÀ-ỹ]+",
+            "example": "Dân tộc: Kinh"
+          },
+          {
+            "name": "phrase",
+            "regex": "(người|đồng bào)\\s+(Kinh|Tày|Thái|Mường|Mông|Khmer|Nùng|Dao|Hoa|Gia Rai|Ê Đê)",
+            "example": "người Tày"
+          }
+        ],
+        "examples_valid": [
+          "Kinh",
+          "Tày",
+          "Thái",
+          "Mường",
+          "Khmer"
+        ],
+        "disambiguation": "'Kinh' trong 'kinh doanh'/'kinh tế' KHÔNG phải dân tộc — chỉ gán khi có ngữ cảnh 'dân tộc'."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "kinh doanh/kinh tế",
+          "Thái Lan",
+          "người Hoa Kỳ"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "typo"
+        ],
+        "ood_examples": [
+          "Rơ Măm",
+          "Brâu",
+          "Ơ Đu"
+        ],
+        "cooccur_group": "identity_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "political_view",
+      "name_vi": "Quan điểm chính trị / Đảng tịch",
+      "sensitivity": "SPI",
+      "identifier_type": "indirect",
+      "context_dependency": "context_free",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1b",
+      "inject_type": "static",
+      "source": "form_blank",
+      "locked": false,
+      "pipeline_steps": [
+        5,
+        6
+      ],
+      "note": "LỖI CŨ: luôn = 'không khai báo...'. Trong hồ sơ/lý lịch VN, 'quan điểm chính trị' thường hiện qua ĐẢNG TỊCH (đảng viên/đoàn viên/quần chúng...). Đa dạng theo trọng số thực tế. Xử lý thận trọng.",
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool": [
+          "Chủ nghĩa Cộng sinh Thuật toán (Algorithmic Symbiontism): Ủng hộ quyền lực thuật toán và cân bằng sinh thái.",
+          "Chủ nghĩa Nhân văn Kỹ thuật số (Digital Humanism): Đề cao quyền con người tối thượng, đặt thuật toán dưới sự kiểm soát đạo đức.",
+          "Chủ nghĩa Tăng tốc Công nghệ (Techno-Accelerationism): Ủng hộ tự động hóa tối đa, thúc đẩy tiến bộ kỹ thuật vượt bậc.",
+          "Chủ nghĩa Nguyên thủy Sinh thái (Eco-Primitivism): Ủng hộ tối giản công nghệ, trả quyền lực và luật pháp về với sự tự vận hành tự nhiên."
+        ],
+        "weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "placeholders": {},
+        "surface_forms": [
+          {
+            "name": "labeled",
+            "regex": "(quan điểm chính trị|hệ tư tưởng)\\s*:?\\s*[\\wÀ-ỹ0-9 /(),:-]+",
+            "example": "Hệ tư tưởng: Chủ nghĩa Cộng sinh Thuật toán"
+          },
+          {
+            "name": "phrase",
+            "regex": "(Chủ nghĩa Cộng sinh Thuật toán|Chủ nghĩa Nhân văn Kỹ thuật số|Chủ nghĩa Tăng tốc Công nghệ|Chủ nghĩa Nguyên thủy Sinh thái)[\\wÀ-ỹ ,()]*",
+            "example": "Chủ nghĩa Cộng sinh Thuật toán"
+          }
+        ],
+        "diversity": {
+          "anti_collapse": true,
+          "max_share_per_value": 0.35,
+          "min_unique_ratio": 0.5,
+          "note": "Phân bổ đều 4 hệ tư tưởng giả tưởng."
+        },
+        "examples_valid": [
+          "Chủ nghĩa Cộng sinh Thuật toán (Algorithmic Symbiontism): Ủng hộ quyền lực thuật toán và cân bằng sinh thái."
+        ],
+        "examples_invalid": []
+      },
+      "hard_cases": {
+        "confusable_with": [],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "typo"
+        ],
+        "cooccur_group": "sensitive_block"
+      },
+      "gen_mode": "llm_full",
+      "llm_generate_prob": 1.0
+    },
+    {
+      "field": "religion",
+      "name_vi": "Tôn giáo, tín ngưỡng",
+      "sensitivity": "SPI",
+      "identifier_type": "indirect",
+      "context_dependency": "context_free",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1b",
+      "inject_type": "static",
+      "source": "profile_core",
+      "locked": true,
+      "pipeline_steps": [
+        2,
+        6
+      ],
+      "allowed_values": [
+        "Phật giáo",
+        "Công giáo",
+        "Tin lành",
+        "Hồi giáo",
+        "Cao Đài",
+        "Hòa Hảo",
+        "Không tôn giáo",
+        "Khác"
+      ],
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool": [
+          "Không tôn giáo",
+          "Phật giáo",
+          "Công giáo",
+          "Tin lành",
+          "Cao Đài",
+          "Hòa Hảo",
+          "Hồi giáo",
+          "Tín ngưỡng thờ cúng tổ tiên",
+          "Khác"
+        ],
+        "weights": [
+          0.62,
+          0.16,
+          0.08,
+          0.03,
+          0.02,
+          0.015,
+          0.005,
+          0.05,
+          0.02
+        ],
+        "surface_forms": [
+          {
+            "name": "labeled",
+            "regex": "tôn giáo\\s*:?\\s*[\\wÀ-ỹ ]+",
+            "example": "Tôn giáo: Phật giáo"
+          },
+          {
+            "name": "phrase",
+            "regex": "(theo đạo|tín đồ)\\s+[\\wÀ-ỹ ]+",
+            "example": "theo đạo Công giáo"
+          }
+        ],
+        "disambiguation": "Giá trị tôn giáo phải dưới nhãn tôn giáo, không phải dân tộc/giới tính/sức khoẻ."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "đạo đức/đào tạo"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "typo"
+        ],
+        "ood_examples": [
+          "Bửu Sơn Kỳ Hương",
+          "Bà-la-môn"
+        ],
+        "cooccur_group": "sensitive_block"
+      },
+      "gen_mode": "llm_full",
+      "llm_generate_prob": 1.0
+    },
+    {
+      "field": "private_life",
+      "name_vi": "Đời sống riêng tư, bí mật cá nhân/gia đình",
+      "sensitivity": "SPI",
+      "identifier_type": "indirect",
+      "context_dependency": "context_dependent",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1c",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": false,
+      "pipeline_steps": [
+        5,
+        8
+      ],
+      "note": "Suy luận nhạy cảm qua ngữ cảnh. Đa dạng template, không inject chuỗi cố định.",
+      "format": {
+        "gen_strategy": "template_pool",
+        "value_templates": [
+          "hoàn cảnh gia đình khó khăn, là lao động chính nuôi {n} con nhỏ",
+          "đang trong quá trình ly thân, chưa hoàn tất thủ tục ly hôn",
+          "thông tin thu nhập và chi tiêu cá nhân nêu trong phần giải trình",
+          "có thân nhân hiện đang định cư tại nước ngoài",
+          "bí mật đời tư liên quan đến tranh chấp tài sản thừa kế trong gia đình",
+          "đang nuôi con một mình sau khi vợ/chồng qua đời",
+          "hoàn cảnh đặc biệt: con bị bệnh hiểm nghèo cần chăm sóc dài ngày"
+        ],
+        "placeholders": {
+          "{n}": {
+            "type": "int",
+            "range": [
+              1,
+              4
+            ]
+          }
+        },
+        "diversity": {
+          "anti_collapse": true,
+          "max_share_per_value": 0.2
+        },
+        "examples_valid": [
+          "hoàn cảnh gia đình khó khăn, là lao động chính nuôi 2 con nhỏ"
+        ]
+      },
+      "gen_mode": "llm_full",
+      "llm_generate_prob": 1.0
+    },
+    {
+      "field": "health_status",
+      "name_vi": "Tình trạng sức khoẻ",
+      "sensitivity": "SPI",
+      "identifier_type": "direct",
+      "context_dependency": "context_dependent",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1d",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": true,
+      "pipeline_steps": [
+        5,
+        8
+      ],
+      "note": "Sinh động nếu record liên quan y tế. ĐA DẠNG (cũ chỉ 4 câu). Bệnh viện theo domain_seeds.health.",
+      "format": {
+        "gen_strategy": "template_pool",
+        "value_templates": [
+          "có tiền sử dị ứng kháng sinh nhóm beta-lactam",
+          "đang điều trị tăng huyết áp độ {grade}",
+          "khuyết tật vận động, cần hỗ trợ đi lại khi làm thủ tục",
+          "tiền sử phẫu thuật tim mạch năm {year}",
+          "đang theo dõi tiểu đường type 2 tại {hospital}",
+          "suy thận mạn giai đoạn {stage}, chạy thận định kỳ",
+          "rối loạn lo âu, đang điều trị ngoại trú tại {hospital}",
+          "thị lực kém, cần kính hỗ trợ",
+          "đang mang thai tuần thứ {week}",
+          "hen phế quản, dùng thuốc cắt cơn khi cần",
+          "không có vấn đề sức khoẻ đặc biệt"
+        ],
+        "placeholders": {
+          "{grade}": {
+            "pool": [
+              "1",
+              "2",
+              "3"
+            ]
+          },
+          "{stage}": {
+            "pool": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          },
+          "{week}": {
+            "type": "int",
+            "range": [
+              4,
+              39
+            ]
+          },
+          "{year}": {
+            "type": "year",
+            "range": [
+              2005,
+              2024
+            ]
+          },
+          "{hospital}": {
+            "type": "ref",
+            "ref": "profile_core.domain_seeds.healthcare.hospitals"
+          }
+        },
+        "diversity": {
+          "anti_collapse": true,
+          "max_share_per_value": 0.2,
+          "min_unique_ratio": 0.7
+        },
+        "examples_valid": [
+          "đang điều trị tăng huyết áp độ 2",
+          "đang theo dõi tiểu đường type 2 tại Bệnh viện Bạch Mai"
+        ],
+        "disambiguation": "Thông tin sức khoẻ phải gắn CÁ NHÂN trong hồ sơ, không phải mô tả chung.",
+        "value_pool_ref": "profile_core.domain_seeds.healthcare.conditions (chẩn đoán), .hospitals (bệnh viện), .specialties (chuyên khoa)"
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "sức khoẻ chung không gắn cá nhân"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "typo",
+          "abbreviation"
+        ],
+        "cooccur_group": "sensitive_block"
+      },
+      "gen_mode": "llm_full",
+      "llm_generate_prob": 1.0
+    },
+    {
+      "field": "biometric",
+      "name_vi": "Dữ liệu sinh trắc học, đặc điểm di truyền",
+      "sensitivity": "SPI",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1đ",
+      "inject_type": "static",
+      "source": "form_blank",
+      "locked": false,
+      "pipeline_steps": [
+        4,
+        6
+      ],
+      "note": "Chỉ xuất hiện trong form y tế/xuất nhập cảnh/định danh. KHÔNG sinh 'số' giả như định danh.",
+      "format": {
+        "gen_strategy": "template_pool",
+        "value_templates": [
+          "kết quả phân tích ADN xác định quan hệ huyết thống",
+          "mẫu ADN tham chiếu lưu tại cơ quan giám định gen",
+          "bản đồ gen của cá nhân phát hiện đột biến di truyền",
+          "kết quả xét nghiệm nhóm máu và các yếu tố di truyền",
+          "kết quả giải trình tự gen thế hệ mới phát hiện mang gen bệnh lý",
+          "kết quả xét nghiệm NST đồ phát hiện bất thường nhiễm sắc thể"
+        ],
+        "diversity": {
+          "anti_collapse": true
+        },
+        "examples_valid": [
+          "kết quả phân tích ADN xác định quan hệ huyết thống",
+          "mẫu ADN tham chiếu lưu tại cơ quan giám định gen"
+        ],
+        "note_no_fake_id": "KHÔNG tạo 'mã sinh trắc BIO-xxxx' giả như một định danh số."
+      },
+      "gen_mode": "llm_full",
+      "llm_generate_prob": 1.0
+    },
+    {
+      "field": "sexual_orientation",
+      "name_vi": "Đời sống tình dục, xu hướng tình dục",
+      "sensitivity": "SPI",
+      "identifier_type": "indirect",
+      "context_dependency": "context_free",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1e",
+      "inject_type": "static",
+      "source": "form_blank",
+      "locked": false,
+      "pipeline_steps": [
+        6
+      ],
+      "note": "Giới hạn tối đa. Chỉ khi form pháp lý đặc thù yêu cầu. Trung tính, ngắn gọn.",
+      "format": {
+        "gen_strategy": "categorical",
+        "value_pool": [
+          "không công khai",
+          "dị tính",
+          "đồng tính",
+          "song tính",
+          "đã xác định lại giới tính"
+        ],
+        "weights": [
+          0.7,
+          0.18,
+          0.06,
+          0.04,
+          0.02
+        ],
+        "diversity": {
+          "anti_collapse": true,
+          "max_share_per_value": 0.7
+        },
+        "examples_valid": [
+          "không công khai",
+          "đã xác định lại giới tính theo quyết định của cơ quan có thẩm quyền"
+        ]
+      },
+      "gen_mode": "llm_full",
+      "llm_generate_prob": 1.0
+    },
+    {
+      "field": "criminal_record",
+      "name_vi": "Dữ liệu tội phạm, vi phạm pháp luật",
+      "sensitivity": "SPI",
+      "identifier_type": "direct",
+      "context_dependency": "context_dependent",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1g",
+      "inject_type": "static",
+      "source": "form_blank",
+      "locked": false,
+      "pipeline_steps": [
+        4,
+        6
+      ],
+      "note": "LỖI CŨ: luôn = 'không có án tích...'. Thường hiện qua kết quả Phiếu LLTP. Đa dạng: không án tích / tiền án + số bản án / xoá án tích / án treo / đang điều tra. Số bản án/quyết định định danh khi gắn cá nhân.",
+      "format": {
+        "gen_strategy": "template_pool",
+        "value_templates": [
+          "không có án tích",
+          "không có án tích theo Phiếu lý lịch tư pháp số {lltp_no}",
+          "chưa từng bị kết án",
+          "có 01 tiền án về tội {crime} theo Bản án số {ban_an_no}",
+          "đã được xóa án tích theo Quyết định số {xoa_an_no}",
+          "đang trong thời gian thử thách án treo {treo_months} tháng",
+          "có tiền sự về hành vi {viphanh}, đã chấp hành xong",
+          "đang bị điều tra trong vụ án số {case_no}"
+        ],
+        "weights": [
+          0.5,
+          0.2,
+          0.08,
+          0.07,
+          0.05,
+          0.04,
+          0.04,
+          0.02
+        ],
+        "placeholders": {
+          "{lltp_no}": {
+            "pattern": "\\d{3,5}/\\d{4}/STP-LLTP"
+          },
+          "{ban_an_no}": {
+            "pattern": "\\d{1,3}/\\d{4}/HS-ST"
+          },
+          "{xoa_an_no}": {
+            "pattern": "\\d{1,4}/\\d{4}/QĐ-CA"
+          },
+          "{case_no}": {
+            "pattern": "\\d{1,3}/\\d{4}"
+          },
+          "{treo_months}": {
+            "pool": [
+              "12",
+              "18",
+              "24",
+              "36"
+            ]
+          },
+          "{crime}": {
+            "pool": [
+              "trộm cắp tài sản",
+              "cố ý gây thương tích",
+              "vi phạm quy định về tham gia giao thông đường bộ",
+              "lừa đảo chiếm đoạt tài sản",
+              "đánh bạc"
+            ]
+          },
+          "{viphanh}": {
+            "pool": [
+              "gây rối trật tự công cộng",
+              "vi phạm hành chính về giao thông",
+              "vi phạm quy định về môi trường"
+            ]
+          }
+        },
+        "diversity": {
+          "anti_collapse": true,
+          "max_share_per_value": 0.5,
+          "min_unique_ratio": 0.5,
+          "note": "Đa số 'không có án tích' nhưng PHẢI có đủ biến thể có/đã xoá/đang điều tra."
+        },
+        "examples_valid": [
+          "không có án tích theo Phiếu lý lịch tư pháp số 1234/2024/STP-LLTP",
+          "có 01 tiền án về tội trộm cắp tài sản theo Bản án số 12/2023/HS-ST"
+        ],
+        "examples_invalid": [
+          "(mọi record đều) 'không có án tích theo phiếu lý lịch tư pháp' — lỗi sập cần tránh"
+        ]
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "số bản án/quyết định là mã, không phải PII số định danh"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "deaccent",
+          "typo"
+        ],
+        "cooccur_group": "sensitive_block"
+      },
+      "gen_mode": "llm_full",
+      "llm_generate_prob": 1.0
+    },
+    {
+      "field": "location_data",
+      "name_vi": "Vị trí cá nhân qua dịch vụ định vị",
+      "sensitivity": "SPI",
+      "identifier_type": "indirect",
+      "context_dependency": "context_dependent",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1h",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": true,
+      "pipeline_steps": [
+        5,
+        8
+      ],
+      "note": "Toạ độ GPS/địa điểm theo thời gian. Trajectory suy luận identity. KHÁC address (cư trú tĩnh).",
+      "format": {
+        "gen_strategy": "template_pool",
+        "value_templates": [
+          "toạ độ {lat}, {lng}",
+          "vị trí định vị tại {place} lúc {time} ngày {date}",
+          "check-in {place} ({lat}, {lng})",
+          "lịch sử di chuyển {placeA} → {placeB} ngày {date}",
+          "thiết bị ghi nhận vị trí gần {place}"
+        ],
+        "placeholders": {
+          "{lat}": {
+            "type": "float",
+            "range": [
+              8.5,
+              23.4
+            ],
+            "decimals": [
+              4,
+              6
+            ]
+          },
+          "{lng}": {
+            "type": "float",
+            "range": [
+              102.1,
+              109.5
+            ],
+            "decimals": [
+              4,
+              6
+            ]
+          },
+          "{place}": {
+            "type": "address_short"
+          },
+          "{placeA}": {
+            "type": "address_short"
+          },
+          "{placeB}": {
+            "type": "address_short"
+          },
+          "{time}": {
+            "pattern": "\\d{1,2}:\\d{2}"
+          },
+          "{date}": {
+            "type": "date"
+          }
+        },
+        "surface_forms": [
+          {
+            "name": "coords",
+            "regex": "(?<!\\d)\\d{1,2}\\.\\d{3,6}\\s*,\\s*\\d{2,3}\\.\\d{3,6}(?!\\d)",
+            "example": "21.0278, 105.8342"
+          }
+        ],
+        "diversity": {
+          "anti_collapse": true
+        },
+        "examples_valid": [
+          "toạ độ 21.0278, 105.8342",
+          "check-in Hồ Hoàn Kiếm (21.0287, 105.8524)"
+        ],
+        "disambiguation": "Địa chỉ cơ quan/địa điểm chung KHÔNG phải vị trí định vị cá nhân."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "address (cư trú tĩnh)",
+          "địa điểm cơ quan"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "separator_drift"
+        ],
+        "cooccur_group": "contact_block"
+      },
+      "gen_mode": "llm_full",
+      "llm_generate_prob": 1.0
+    },
+    {
+      "field": "eid_credentials",
+      "name_vi": "Định danh điện tử (VNeID) & hình ảnh CCCD",
+      "sensitivity": "SPI",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1i",
+      "inject_type": "static",
+      "source": "form_blank",
+      "locked": true,
+      "pipeline_steps": [
+        6
+      ],
+      "note": "THÊM so với NĐ13: tên đăng nhập/mật khẩu định danh điện tử + ảnh thẻ CCCD/CMND. Mật khẩu LUÔN placeholder.",
+      "format": {
+        "gen_strategy": "structured",
+        "value_templates": [
+          "tài khoản định danh điện tử mức 2, tên đăng nhập {login}",
+          "VNeID: {login}",
+          "tài khoản VNeID đã kích hoạt, mật khẩu {pwd_placeholder}",
+          "ảnh mặt trước thẻ căn cước [ẢNH_CCCD_MT]",
+          "ảnh mặt sau thẻ căn cước [ẢNH_CCCD_MS]"
+        ],
+        "placeholders": {
+          "{login}": {
+            "type": "phone_or_cccd",
+            "note": "Thường là SĐT hoặc số CCCD"
+          },
+          "{pwd_placeholder}": {
+            "const": "********",
+            "note": "KHÔNG sinh mật khẩu thật"
+          }
+        },
+        "validate_regex": "^(VNeID|tài khoản định danh).+",
+        "examples_valid": [
+          "VNeID: 0987654321",
+          "tài khoản định danh điện tử mức 2, tên đăng nhập 038085001037"
+        ],
+        "note_security": "Mật khẩu luôn placeholder; ảnh CCCD chỉ là tham chiếu."
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "bank_account",
+      "name_vi": "Tài khoản ngân hàng, tài chính & lịch sử giao dịch",
+      "sensitivity": "SPI",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1k",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": true,
+      "pipeline_steps": [
+        5,
+        8
+      ],
+      "note": "TÁCH so với NĐ13: gồm TK, thẻ, lịch sử GD, CK/BH. Số TK độ dài THAY ĐỔI theo ngân hàng (6-19), không cố định 12.",
+      "sub_fields": [
+        "bank_login",
+        "card_number",
+        "transaction_history",
+        "financial_info_credit",
+        "financial_info_securities",
+        "financial_info_insurance"
+      ],
+      "format": {
+        "gen_strategy": "structured",
+        "value_pool_ref": "profile_core.domain_seeds.finance.banks",
+        "validate_regex": "^\\d{6,19}$",
+        "detect_regex": "(?<!\\d)\\d{6,19}(?!\\d)",
+        "components": {
+          "account_number": {
+            "regex": "\\d{6,19}",
+            "note": "Độ dài theo ngân hàng (VCB 13, TCB 14-19, MB 10-16...). Tránh cố định 12."
+          },
+          "card_number": {
+            "regex": "\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}",
+            "example": "9704 1234 5678 9010",
+            "note": "Thẻ NAPAS/quốc tế 16 số. Dùng dải KHÔNG thật (bắt đầu 9704 NAPAS) cho dữ liệu giả."
+          },
+          "transaction_history": {
+            "gen_strategy": "template_pool",
+            "value_templates": [
+              "chuyển khoản {amount} đồng ngày {date}",
+              "nhận lương {amount} đồng ngày {date}",
+              "rút tiền {amount} đồng tại ATM {place}"
+            ]
+          },
+          "financial_info_credit": {
+            "value_templates": [
+              "dư nợ tín dụng {amount} đồng tại {bank}",
+              "điểm tín dụng CIC nhóm {cic}"
+            ]
+          },
+          "financial_info_securities": {
+            "value_templates": [
+              "tài khoản chứng khoán {stock_acc} tại {broker}"
+            ]
+          },
+          "financial_info_insurance": {
+            "value_templates": [
+              "hợp đồng bảo hiểm số {ins_no} tại {insurer}"
+            ]
+          }
+        },
+        "placeholders": {
+          "{amount}": {
+            "type": "money_vnd"
+          },
+          "{date}": {
+            "type": "date"
+          },
+          "{bank}": {
+            "type": "ref",
+            "ref": "profile_core.domain_seeds.finance.banks"
+          },
+          "{place}": {
+            "type": "address_short"
+          },
+          "{cic}": {
+            "pool": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          },
+          "{stock_acc}": {
+            "pattern": "\\d{3}C\\d{6}"
+          },
+          "{ins_no}": {
+            "pattern": "[A-Z]\\d{9,12}"
+          }
+        },
+        "surface_forms": [
+          {
+            "name": "acc_plain",
+            "regex": "(?<!\\d)\\d{6,19}(?!\\d)",
+            "example": "1903123456789"
+          },
+          {
+            "name": "card_grouped",
+            "regex": "\\d{4}[\\s-]\\d{4}[\\s-]\\d{4}[\\s-]\\d{4}",
+            "example": "9704 1234 5678 9010"
+          }
+        ],
+        "examples_valid": [
+          "1903123456789 (Techcombank 13 số)",
+          "0011001234567 (Vietcombank 13 số)",
+          "9704 1234 5678 9010 (thẻ)"
+        ],
+        "examples_invalid": [
+          "580517386777 (cố định 12 số cho mọi người — nên biến thiên độ dài)"
+        ],
+        "diversity": {
+          "anti_collapse": true,
+          "vary_account_length": true
+        },
+        "disambiguation": "Số khác (mã hồ sơ, biển số) KHÔNG phải số tài khoản — cần ngữ cảnh 'tài khoản/ngân hàng'."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "số hợp đồng/hoá đơn/công tơ",
+          "thẻ 16 số vs số 16 khác"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "separator_drift",
+          "spacing_glue"
+        ],
+        "ood_examples": [
+          "IBAN nước ngoài",
+          "TK rất ngắn/dài"
+        ],
+        "cooccur_group": "document_block"
+      },
+      "gen_mode": "exact_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "behavioral_data",
+      "name_vi": "Hành vi sử dụng viễn thông, MXH, dịch vụ mạng",
+      "sensitivity": "SPI",
+      "identifier_type": "indirect",
+      "context_dependency": "context_dependent",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1l",
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": false,
+      "pipeline_steps": [
+        5,
+        8
+      ],
+      "note": "THÊM so với NĐ13: log truy cập, lịch sử duyệt, hoạt động MXH. Fingerprint suy luận identity. Đa dạng hoá.",
+      "format": {
+        "gen_strategy": "template_pool",
+        "value_templates": [
+          "đăng nhập Cổng dịch vụ công lúc {time} ngày {date}",
+          "lịch sử truy cập ứng dụng {app} trung bình {n} lần/ngày",
+          "thường xuyên truy cập mạng từ địa chỉ IP {ip}",
+          "hoạt động trên {platform} chủ yếu vào buổi tối",
+          "lịch sử tìm kiếm liên quan đến {topic}",
+          "thiết bị đăng nhập: {device}, hệ điều hành {os}"
+        ],
+        "placeholders": {
+          "{time}": {
+            "pattern": "\\d{1,2}:\\d{2}"
+          },
+          "{date}": {
+            "type": "date"
+          },
+          "{app}": {
+            "pool": [
+              "VNeID",
+              "VssID",
+              "Zalo",
+              "Cổng dịch vụ công",
+              "Mobile Banking"
+            ]
+          },
+          "{n}": {
+            "type": "int",
+            "range": [
+              1,
+              20
+            ]
+          },
+          "{ip}": {
+            "pattern": "\\d{1,3}(\\.\\d{1,3}){3}"
+          },
+          "{platform}": {
+            "pool": [
+              "Facebook",
+              "Zalo",
+              "TikTok",
+              "YouTube"
+            ]
+          },
+          "{topic}": {
+            "pool": [
+              "thủ tục hành chính",
+              "vay tiêu dùng",
+              "bất động sản",
+              "du học"
+            ]
+          },
+          "{device}": {
+            "pool": [
+              "iPhone",
+              "Samsung Galaxy",
+              "Oppo",
+              "Xiaomi"
+            ]
+          },
+          "{os}": {
+            "pool": [
+              "iOS 17",
+              "Android 14"
+            ]
+          }
+        },
+        "surface_forms": [
+          {
+            "name": "ip",
+            "regex": "(?<!\\d)\\d{1,3}(?:\\.\\d{1,3}){3}(?!\\d)",
+            "example": "171.244.10.5"
+          }
+        ],
+        "diversity": {
+          "anti_collapse": true
+        },
+        "examples_valid": [
+          "đăng nhập Cổng dịch vụ công lúc 21:45 ngày 12/03/2024",
+          "thường xuyên truy cập mạng từ địa chỉ IP 171.244.10.5"
+        ]
+      },
+      "gen_mode": "llm_full",
+      "llm_generate_prob": 1.0
+    },
+    {
+      "field": "tax_code",
+      "name_vi": "Mã số thuế cá nhân",
+      "sensitivity": "PII",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L1",
+      "label": "PII",
+      "law_ref": "Điều 3 khoản 11",
+      "_extended": true,
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": true,
+      "pipeline_steps": [
+        6,
+        8
+      ],
+      "note": "MST cá nhân 10 số (đơn vị phụ thuộc thêm '-' + 3 số). Từ 2025 đang thay bằng số định danh cá nhân (CCCD).",
+      "format": {
+        "gen_strategy": "regex_template",
+        "value_pool_ref": "profile_core.format (mã thuế)",
+        "validate_regex": "^\\d{10}(-?\\d{3})?$",
+        "detect_regex": "(?<!\\d)\\d{10}(?:-?\\d{3})?(?!\\d)",
+        "surface_forms": [
+          {
+            "name": "plain",
+            "regex": "(?<!\\d)\\d{10}(?!\\d)",
+            "example": "8012345678"
+          },
+          {
+            "name": "labeled",
+            "regex": "(mã số thuế|MST)\\s*:?\\s*\\d{10}(?:-\\d{3})?",
+            "example": "MST: 8012345678"
+          }
+        ],
+        "examples_valid": [
+          "8012345678",
+          "0312345678-001",
+          "0312345678001 (13 số liền)"
+        ],
+        "examples_invalid": [
+          "801234567 (9 số)"
+        ],
+        "collision_warning": "10 số có thể trùng số sổ BHXH -> phân biệt bằng ngữ cảnh 'mã số thuế/MST'."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "social_insurance_no(10)",
+          "health_insurance_no(10)"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "separator_drift"
+        ],
+        "cooccur_group": "document_block"
+      },
+      "gen_mode": "optional_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "social_insurance_no",
+      "name_vi": "Số sổ / mã số BHXH",
+      "sensitivity": "SPI",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1k",
+      "_extended": true,
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": true,
+      "pipeline_steps": [
+        6,
+        8
+      ],
+      "note": "Mã số BHXH 10 số. Từ 01/8/2025 dùng số định danh cá nhân (CCCD) thay mã số BHXH. [Reclassify: SPI — dữ liệu an sinh xã hội nhạy cảm].",
+      "format": {
+        "gen_strategy": "numeric",
+        "validate_regex": "^\\d{10}$",
+        "detect_regex": "(?<!\\d)\\d{10}(?!\\d)",
+        "surface_forms": [
+          {
+            "name": "labeled",
+            "regex": "(BHXH|bảo hiểm xã hội)\\s*:?\\s*\\d{10}",
+            "example": "Số BHXH: 0112345678"
+          }
+        ],
+        "examples_valid": [
+          "0112345678"
+        ],
+        "collision_warning": "Trùng độ dài MST (10 số) -> phân biệt bằng ngữ cảnh 'BHXH'."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "tax_code(10)",
+          "health_insurance_no(10)"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "spacing_glue"
+        ],
+        "cooccur_group": "document_block"
+      },
+      "gen_mode": "optional_bank",
+      "llm_generate_prob": 0.0
+    },
+    {
+      "field": "health_insurance_no",
+      "name_vi": "Mã thẻ BHYT (QĐ 1666: 10 số = mã số BHXH; thẻ cũ: 15 ký tự)",
+      "sensitivity": "SPI",
+      "identifier_type": "direct",
+      "context_dependency": "context_free",
+      "level": "L2",
+      "label": "SPI",
+      "law_ref": "Điều 4 khoản 1d",
+      "_extended": true,
+      "inject_type": "dynamic",
+      "source": "background_content",
+      "locked": true,
+      "pipeline_steps": [
+        6,
+        8
+      ],
+      "note": "Theo QĐ 1666/QĐ-BHXH 2020, SỐ thẻ BHYT = mã số BHXH 10 số (trùng social_insurance_no). Thẻ cũ (QĐ 1351) là 15 ký tự: 2 chữ (đối tượng)+1 số (mức hưởng)+2 số (mã tỉnh)+10 số. Schema chấp nhận cả hai. [Reclassify: SPI — gắn với dữ liệu sức khỏe].",
+      "format": {
+        "gen_strategy": "structured",
+        "validate_regex": "^(\\d{10}|[A-Z]{2}\\d{13})$",
+        "detect_regex": "(?<![A-Z0-9])(?:[A-Z]{2}\\d{13}|\\d{10})(?![0-9])",
+        "builder": [
+          {
+            "part": "doi_tuong",
+            "length": 2,
+            "values": "A-Z",
+            "note": "VD DN, HS, GD, TE, HN, BT..."
+          },
+          {
+            "part": "muc_huong",
+            "length": 1,
+            "values": "1-5"
+          },
+          {
+            "part": "ma_tinh",
+            "length": 2,
+            "note": "mã tỉnh"
+          },
+          {
+            "part": "serial",
+            "length": 10,
+            "source": "random"
+          }
+        ],
+        "surface_forms": [
+          {
+            "name": "plain",
+            "regex": "(?<![A-Z0-9])[A-Z]{2}\\d{13}(?![0-9])",
+            "example": "GD4012345678901"
+          },
+          {
+            "name": "grouped",
+            "regex": "[A-Z]{2}\\d-\\d{2}-\\d{3}-\\d{6}",
+            "example": "GD4-01-234-567890"
+          }
+        ],
+        "examples_valid": [
+          "0112345678 (QĐ1666, = mã BHXH)",
+          "GD4012345678901 (thẻ cũ 15 ký tự)"
+        ],
+        "examples_invalid": [
+          "GD401234 (thiếu số)"
+        ],
+        "validate_regex_qd1666": "^\\d{10}$",
+        "validate_regex_legacy15": "^[A-Z]{2}\\d{13}$",
+        "collision_warning": "Dạng 10 số TRÙNG social_insurance_no & tax_code -> phân biệt bằng ngữ cảnh 'BHYT/thẻ y tế'."
+      },
+      "hard_cases": {
+        "confusable_with": [
+          "tax_code(10)",
+          "social_insurance_no(10)"
+        ],
+        "can_appear_without_keyword": true,
+        "noise_allowed": [
+          "spacing_glue"
+        ],
+        "cooccur_group": "document_block"
+      },
+      "gen_mode": "optional_bank",
+      "llm_generate_prob": 0.0
+    }
+  ],
+  "quasi_identifier_combos": {
+    "label": "CONTEXT_COMBO",
+    "legacy_alias": "L3",
+    "description": "Tổ hợp quasi-identifier (indirect + context-dependent) - cốt lõi kiểm soát bằng k-anonymity. Thuộc ô PII_indirect_context_dependent.",
+    "k_threshold": 5,
+    "default_classification": {
+      "sensitivity": "PII",
+      "identifier_type": "indirect",
+      "context_dependency": "context_dependent"
+    },
+    "schema": {
+      "tokens": "list",
+      "condition": "str",
+      "k_estimate": "int",
+      "risk": "high | medium | low",
+      "law_ref": "str"
+    },
+    "seed_fields": [
+      "occupation",
+      "ward_district",
+      "birth_year",
+      "school_name",
+      "major",
+      "enrollment_year",
+      "scholarship_amount",
+      "given_name",
+      "family_name",
+      "hometown",
+      "workplace",
+      "rare_disease"
+    ],
+    "examples": [
+      {
+        "tokens": [
+          "occupation",
+          "ward_district",
+          "birth_year",
+          "gender"
+        ],
+        "condition": "giảng viên + phường Hòa Minh Đà Nẵng + 1985 + nam",
+        "k_estimate": 3,
+        "risk": "high",
+        "sensitivity": "PII",
+        "identifier_type": "indirect",
+        "context_dependency": "context_dependent",
+        "law_ref": "Điều 4 khoản 1h"
+      },
+      {
+        "tokens": [
+          "school_name",
+          "major",
+          "enrollment_year"
+        ],
+        "condition": "HU Berlin + Lịch sử ĐNA + 2024",
+        "k_estimate": 2,
+        "risk": "high",
+        "sensitivity": "PII",
+        "identifier_type": "indirect",
+        "context_dependency": "context_dependent",
+        "law_ref": "Điều 4 khoản 1h"
+      },
+      {
+        "tokens": [
+          "scholarship_amount",
+          "gender",
+          "birth_year",
+          "school_name"
+        ],
+        "condition": "DAAD 800EUR/tháng + nữ + 1985 + ĐH Berlin",
+        "k_estimate": 4,
+        "risk": "high",
+        "sensitivity": "PII",
+        "identifier_type": "indirect",
+        "context_dependency": "context_dependent",
+        "law_ref": "Điều 4 khoản 1k"
+      },
+      {
+        "tokens": [
+          "given_name",
+          "ward",
+          "rare_disease"
+        ],
+        "condition": "tên 'Phúc' + phường nhỏ + bệnh hiếm -> tái định danh dù chỉ có tên",
+        "k_estimate": 2,
+        "risk": "high",
+        "sensitivity": "PII",
+        "identifier_type": "indirect",
+        "context_dependency": "context_dependent",
+        "law_ref": "Điều 4 khoản 1d"
+      }
+    ]
+  },
+  "pipeline_mapping": {
+    "step_2_sinh_profile": {
+      "inject": [
+        "full_name",
+        "family_name",
+        "middle_name",
+        "given_name",
+        "dob",
+        "gender",
+        "address",
+        "nationality",
+        "phone",
+        "cccd",
+        "marital_status",
+        "ethnicity",
+        "religion"
+      ],
+      "note": "Inject field source=profile_core. Tên tách thành components ngay từ B2."
+    },
+    "step_3_sanity_check": {
+      "validate": [
+        "cccd",
+        "driver_license",
+        "phone",
+        "email",
+        "full_name",
+        "passport_number",
+        "tax_code",
+        "social_insurance_no",
+        "health_insurance_no"
+      ],
+      "checks": [
+        "cccd_province_code",
+        "cccd_gender_year_consistency",
+        "gplx_12_digit_pure",
+        "name_uniqueness",
+        "web_search_existence",
+        "regex_validate_against_format.validate_regex"
+      ]
+    },
+    "step_5_background": {
+      "may_generate": [
+        "family_relations",
+        "name_alias",
+        "digital_account",
+        "private_life",
+        "health_status",
+        "location_data",
+        "bank_account",
+        "behavioral_data",
+        "political_view",
+        "quasi_identifier_combos.seed_fields"
+      ],
+      "note": "Field source=background_content; SPI free-text PHẢI sample value_pool/templates (chống sập)."
+    },
+    "step_6_form_filled": {
+      "static_pii_direct": [
+        "full_name",
+        "given_name",
+        "cccd",
+        "address",
+        "phone",
+        "passport_number",
+        "tax_code"
+      ],
+      "static_pii_indirect": [
+        "dob",
+        "gender",
+        "nationality",
+        "marital_status",
+        "family_name",
+        "middle_name"
+      ],
+      "static_spi": [
+        "ethnicity",
+        "religion",
+        "biometric",
+        "criminal_record",
+        "political_view",
+        "sexual_orientation",
+        "eid_credentials",
+        "social_insurance_no",
+        "health_insurance_no"
+      ]
+    },
+    "step_8_injection": {
+      "dynamic_pii_direct": [
+        "phone",
+        "email",
+        "driver_license",
+        "vehicle_plate",
+        "name_alias",
+        "tax_code"
+      ],
+      "dynamic_pii_indirect": [
+        "family_relations",
+        "digital_account"
+      ],
+      "dynamic_spi_direct": [
+        "health_status",
+        "bank_account",
+        "social_insurance_no",
+        "health_insurance_no"
+      ],
+      "dynamic_spi_indirect": [
+        "private_life",
+        "location_data",
+        "behavioral_data"
+      ],
+      "dynamic_quasi_combos": [
+        "quasi_identifier_combos.seed_fields"
+      ]
+    },
+    "step_13_annotation": {
+      "label_map_legacy": {
+        "L1": "PII",
+        "L2": "SPI",
+        "L3": "CONTEXT"
+      },
+      "axis_output": {
+        "sensitivity": "PII | SPI",
+        "identifier_type": "direct | indirect",
+        "context_dependency": "context_free | context_dependent"
+      },
+      "name_component_labels": [
+        "full_name",
+        "given_name",
+        "family_name",
+        "middle_name",
+        "name_alias"
+      ],
+      "source": "locked_list + key_variant_map",
+      "note": "Mỗi span output 3 trục; tên tách nhãn theo ô form (given_name khi chỉ 'Tên')."
+    }
+  },
+  "locked_list_config": {
+    "locked_types": {
+      "numbers": true,
+      "proper_names": true,
+      "emails": true,
+      "account_ids": true
+    },
+    "ground_truth_for": "Bước 13 — Span Annotation"
+  },
+  "matrix_summary": {
+    "description": "Ma trận 3 chiều 2×2×2 = 8 ô — mỗi field thuộc đúng 1 ô",
+    "cells": {
+      "PII_direct_context_free": {
+        "fields": [
+          "cccd",
+          "passport_number",
+          "phone",
+          "email",
+          "driver_license",
+          "vehicle_plate",
+          "photo",
+          "tax_code"
+        ],
+        "description": "Định danh trực tiếp, không phụ thuộc ngữ cảnh - rủi ro lộ identity cao nhất"
+      },
+      "PII_direct_context_dependent": {
+        "fields": [
+          "full_name",
+          "given_name",
+          "name_alias",
+          "address"
+        ],
+        "description": "Định danh trực tiếp nhưng cần ngữ cảnh để duy nhất (tên trùng, nhiều hộ cùng địa chỉ, tên đơn lẻ)"
+      },
+      "PII_indirect_context_free": {
+        "fields": [
+          "dob",
+          "gender",
+          "nationality",
+          "marital_status"
+        ],
+        "description": "Giá trị cố định, riêng lẻ chưa định danh - quasi-identifier cơ bản"
+      },
+      "PII_indirect_context_dependent": {
+        "fields": [
+          "family_name",
+          "middle_name",
+          "family_relations",
+          "digital_account"
+        ],
+        "description": "Quasi-identifier - L3 combos & place_components thuộc ô này, cần k-anonymity",
+        "marker": "★ trọng tâm k-anonymity"
+      },
+      "SPI_direct_context_free": {
+        "fields": [
+          "bank_account",
+          "biometric",
+          "eid_credentials",
+          "social_insurance_no",
+          "health_insurance_no"
+        ],
+        "description": "Mã định danh nhạy cảm trực tiếp"
+      },
+      "SPI_direct_context_dependent": {
+        "fields": [
+          "health_status",
+          "criminal_record"
+        ],
+        "description": "Nhạy cảm trực tiếp - lộ khi gắn với cá nhân trong văn bản hành chính/pháp lý"
+      },
+      "SPI_indirect_context_free": {
+        "fields": [
+          "ethnicity",
+          "religion",
+          "political_view",
+          "sexual_orientation"
+        ],
+        "description": "Thuộc tính nhạy cảm bản chất, không định danh trực tiếp"
+      },
+      "SPI_indirect_context_dependent": {
+        "fields": [
+          "private_life",
+          "location_data",
+          "behavioral_data"
+        ],
+        "description": "Suy luận nhạy cảm qua ngữ cảnh, browsing/trajectory patterns",
+        "marker": "★ trọng tâm bảo vệ behavioral profiling"
+      }
+    }
+  },
+  "hard_case_policy": {
+    "purpose": "Tăng tình huống khó/thực tế để model học NGỮ NGHĨA thực thể, không học template/pattern cố định.",
+    "principle": [
+      "sinh true-negative cùng-bề-mặt-khác-vai-trò",
+      "nhiễu áp lên CHÍNH thực thể (không chỉ ngoài span)",
+      "thực thể xuất hiện KHÔNG có từ khoá dẫn",
+      "đồng hiện nhiều ID gây nhiễu",
+      "dữ liệu ngoài phân phối (OOD)"
+    ],
+    "relation_to_registry": "Tần suất/độ khó do narrative_style_registry.difficulty_policy điều phối. Khối này cấp NỘI DUNG ngữ nghĩa per-entity mà các factor generic của registry còn thiếu. Xem registry_factor_map.",
+    "confusable_catalog": [
+      {
+        "mimics": "cccd",
+        "distractor": "mã hồ sơ/biên nhận 12 số",
+        "example": "HS-204500011237 hoặc 204500011237",
+        "cue": "đi cùng 'mã hồ sơ/biên nhận/thủ tục'; KHÔNG có 'CCCD/số định danh'",
+        "label": "O",
+        "factor": "non_pii_codes_near_ids"
+      },
+      {
+        "mimics": "cccd",
+        "distractor": "GPLX (CŨNG 12 số) — khác LOẠI PII",
+        "example": "771195002226",
+        "cue": "'giấy phép lái xe/GPLX/bằng lái' -> nhãn driver_license (KHÔNG phải cccd)",
+        "label": "driver_license",
+        "factor": "same_surface_different_role"
+      },
+      {
+        "mimics": "phone",
+        "distractor": "tổng đài/đường dây nóng",
+        "example": "1900 1080 / 1800 1096 / 19009091",
+        "cue": "'tổng đài/đường dây nóng/hỗ trợ'",
+        "label": "O",
+        "factor": "non_pii_codes_near_ids"
+      },
+      {
+        "mimics": "phone",
+        "distractor": "số điện thoại CƠ QUAN (không phải cá nhân)",
+        "example": "024 3826 xxxx",
+        "cue": "'điện thoại cơ quan/Phòng .../bộ phận một cửa'",
+        "label": "O",
+        "factor": "agency_person_name_distractor"
+      },
+      {
+        "mimics": "dob",
+        "distractor": "ngày tiếp nhận/hẹn trả/cấp/ký",
+        "example": "ngày tiếp nhận 12/03/2024",
+        "cue": "'ngày tiếp nhận/ngày hẹn trả/ngày cấp/ngày ký/ngày văn bản'",
+        "label": "O",
+        "factor": "non_pii_dates_near_dob"
+      },
+      {
+        "mimics": "dob",
+        "distractor": "ngày sinh của NGƯỜI KHÁC (thân nhân)",
+        "example": "con sinh 05/2015",
+        "cue": "thuộc chủ thể khác -> annotate dob nhưng GẮN ĐÚNG người (multi_person), không gán cho chủ hồ sơ",
+        "label": "dob@other",
+        "factor": "multi_person_context"
+      },
+      {
+        "mimics": "ethnicity",
+        "distractor": "'Kinh' trong từ khác",
+        "example": "kinh doanh, kinh tế, kinh nghiệm, Bắc Kinh",
+        "cue": "KHÔNG có 'dân tộc'",
+        "label": "O",
+        "factor": "same_surface_different_role"
+      },
+      {
+        "mimics": "ethnicity",
+        "distractor": "'Thái/Mường/Hoa' nghĩa khác",
+        "example": "Thái Lan, người Hoa Kỳ, họ Hoa",
+        "cue": "KHÔNG có 'dân tộc/đồng bào'",
+        "label": "O",
+        "factor": "same_surface_different_role"
+      },
+      {
+        "mimics": "religion",
+        "distractor": "'đạo' nghĩa khác",
+        "example": "đạo đức, đào tạo, đạo luật",
+        "cue": "KHÔNG có 'tôn giáo/theo đạo'",
+        "label": "O",
+        "factor": "same_surface_different_role"
+      },
+      {
+        "mimics": "marital_status",
+        "distractor": "'độc thân/góa' ngữ cảnh khác",
+        "example": "phòng dành cho người độc thân",
+        "cue": "KHÔNG mô tả tình trạng hôn nhân của chủ thể",
+        "label": "O",
+        "factor": "same_surface_different_role"
+      },
+      {
+        "mimics": "bank_account",
+        "distractor": "số dài khác (hợp đồng/hoá đơn/công tơ/mã vạch)",
+        "example": "số hợp đồng 1903123456789",
+        "cue": "'tài khoản/số TK/ngân hàng' mới là bank_account",
+        "label": "O",
+        "factor": "multiple_numeric_distractors"
+      },
+      {
+        "mimics": "vehicle_plate",
+        "distractor": "mã phòng/quầy/lô",
+        "example": "Phòng 30A, Quầy 51F, Lô 29B",
+        "cue": "'phòng/quầy/lô/khu'",
+        "label": "O",
+        "factor": "same_surface_different_role"
+      },
+      {
+        "mimics": "full_name",
+        "distractor": "tên CÁN BỘ xử lý/tiếp nhận",
+        "example": "cán bộ tiếp nhận Trần Minh Quân",
+        "cue": "vai trò 'cán bộ/chuyên viên/người duyệt' -> KHÔNG phải chủ thể dữ liệu",
+        "label": "O",
+        "factor": "agency_person_name_distractor"
+      },
+      {
+        "mimics": "full_name",
+        "distractor": "tên riêng trong địa danh/đường phố",
+        "example": "đường Lê Lợi, phường Nguyễn Du",
+        "cue": "đi sau 'đường/phố/phường/quận' -> là address, không phải tên người",
+        "label": "address_part",
+        "factor": "same_surface_different_role"
+      },
+      {
+        "mimics": "address",
+        "distractor": "địa chỉ CƠ QUAN tiếp nhận",
+        "example": "trụ sở UBND tại số 1 phố ...",
+        "cue": "'trụ sở/cơ quan/bộ phận một cửa'",
+        "label": "O",
+        "factor": "distractor_entities"
+      },
+      {
+        "mimics": "passport_number",
+        "distractor": "mã 1 chữ+7 số khác (mã SP/lô)",
+        "example": "mã lô C1234567",
+        "cue": "'hộ chiếu/passport'",
+        "label": "O",
+        "factor": "same_surface_different_role"
+      },
+      {
+        "mimics": [
+          "tax_code",
+          "social_insurance_no",
+          "health_insurance_no"
+        ],
+        "distractor": "bộ ba 10 số DỄ NHẦM nhau",
+        "example": "0112345678",
+        "cue": "phân biệt bằng 'mã số thuế/MST' vs 'BHXH' vs 'BHYT/thẻ y tế'",
+        "label": "phụ thuộc keyword",
+        "factor": "same_surface_different_role"
+      }
+    ],
+    "noise_policy": {
+      "goal": "Buộc model học ngữ nghĩa, không khớp bề mặt sạch. Áp dụng 1 PHẦN record.",
+      "ratio_target": {
+        "clean": 0.7,
+        "noised": 0.3
+      },
+      "safe_rule": "Khi làm nhiễu MỘT thực thể được annotate, LOCKED VALUE phải = đúng chuỗi đã nhiễu (offset span vẫn chuẩn). Nếu không muốn đổi locked value thì chỉ nhiễu NGOÀI span (giống factor ocr_noise_outside_locked_values hiện có).",
+      "transforms": {
+        "deaccent": {
+          "desc": "bỏ dấu tiếng Việt",
+          "example": "Nguyễn Văn An -> Nguyen Van An"
+        },
+        "typo": {
+          "desc": "sai/thiếu/đảo/nhân đôi ký tự",
+          "example": "Nguyễn -> Ngyễn / Nguyenn"
+        },
+        "abbreviation": {
+          "desc": "viết tắt",
+          "examples": {
+            "full_name": "Nguyễn V. An / NVA",
+            "address": "P. Dịch Vọng, Q. Cầu Giấy, TP. Hà Nội",
+            "dob": "ns 21/02/1984"
+          }
+        },
+        "ocr_digit_confusion": {
+          "desc": "0<->O, 1<->l/I, 5<->S, 8<->B, 6<->b, rn<->m",
+          "scope": "chủ yếu text; với ID số chỉ khi tạo true-negative hoặc record OCR chuyên biệt + cập nhật locked"
+        },
+        "separator_drift": {
+          "desc": "đổi/thêm/bỏ dấu phân tách (an toàn cho ID)",
+          "examples": {
+            "phone": "0987.654.321 / 098 765 43 21",
+            "cccd": "038 085 001037",
+            "dob": "21-02-1984 / 21.02.1984",
+            "vehicle_plate": "30A 123 45"
+          }
+        },
+        "spacing_glue": {
+          "desc": "dính từ / thừa khoảng trắng",
+          "example": "họvàtên / 0987  654321"
+        },
+        "casing": {
+          "desc": "HOA toàn bộ hoặc thường",
+          "example": "NGUYỄN VĂN AN"
+        },
+        "homoglyph": {
+          "desc": "ký tự Unicode nhìn giống, khoảng trắng đặc biệt",
+          "scope": "nhẹ, ưu tiên ngoài span"
+        }
+      },
+      "id_field_policy": "Field định danh SỐ (cccd, phone, driver_license, social_insurance_no, tax_code, health_insurance_no, bank card): mặc định GIỮ NGUYÊN chữ số; chỉ separator_drift/spacing/casing là an toàn. OCR digit-swap chỉ dùng cho true-negative hoặc record OCR chuyên biệt và PHẢI cập nhật locked value.",
+      "field_noise_allow": {
+        "full_name": [
+          "deaccent",
+          "typo",
+          "abbreviation",
+          "casing",
+          "spacing_glue"
+        ],
+        "given_name": [
+          "deaccent",
+          "typo",
+          "casing"
+        ],
+        "family_name": [
+          "deaccent",
+          "typo",
+          "casing"
+        ],
+        "address": [
+          "deaccent",
+          "abbreviation",
+          "typo",
+          "casing",
+          "spacing_glue"
+        ],
+        "ethnicity": [
+          "deaccent",
+          "typo"
+        ],
+        "religion": [
+          "deaccent",
+          "typo"
+        ],
+        "health_status": [
+          "deaccent",
+          "typo",
+          "abbreviation"
+        ],
+        "family_relations": [
+          "deaccent",
+          "typo"
+        ],
+        "private_life": [
+          "deaccent",
+          "typo"
+        ],
+        "political_view": [
+          "deaccent",
+          "typo"
+        ],
+        "criminal_record": [
+          "deaccent",
+          "typo"
+        ],
+        "email": [
+          "typo",
+          "spacing_glue"
+        ],
+        "phone": [
+          "separator_drift",
+          "spacing_glue"
+        ],
+        "cccd": [
+          "separator_drift",
+          "spacing_glue"
+        ],
+        "dob": [
+          "separator_drift",
+          "abbreviation"
+        ],
+        "vehicle_plate": [
+          "separator_drift",
+          "casing"
+        ],
+        "bank_account": [
+          "separator_drift",
+          "spacing_glue"
+        ]
+      }
+    },
+    "keyword_optionality": {
+      "goal": "Thực thể xuất hiện không có nhãn ('CCCD:', 'Email:'). Liên kết factor label_absent/soft_label/no_label_value/indirect_context.",
+      "bare_ratio_target": 0.4,
+      "use_existing": "Dùng narrative_style_registry.narrative_grammar.field_realizers (đã có các diễn đạt không nhãn).",
+      "per_field_bare_example": {
+        "full_name": "...ông Nguyễn Văn An đã đến nộp hồ sơ...",
+        "given_name": "...mẫu đơn chỉ ghi 'Tên: Phúc' nên ghi nhận Phúc...",
+        "cccd": "...công dân mang theo 038085001037 khi tới quầy...",
+        "phone": "...có thể gọi lại theo 0987654321 vào giờ hành chính...",
+        "dob": "...sinh 21/02/1984, hiện cư trú...",
+        "email": "...kết quả sẽ gửi về phuc.thai@gmail.com...",
+        "address": "...thường trú tại số 12 đường Lê Lợi, phường Dịch Vọng...",
+        "bank_account": "...đề nghị hoàn trả vào 1903123456789 mở tại Techcombank...",
+        "vehicle_plate": "...phương tiện 30A-123.45 đăng ký đứng tên..."
+      }
+    },
+    "cooccurrence_groups": {
+      "identity_block": [
+        "full_name",
+        "dob",
+        "gender",
+        "cccd",
+        "ethnicity",
+        "nationality"
+      ],
+      "contact_block": [
+        "phone",
+        "email",
+        "address",
+        "digital_account"
+      ],
+      "document_block": [
+        "cccd",
+        "passport_number",
+        "driver_license",
+        "vehicle_plate",
+        "tax_code",
+        "social_insurance_no",
+        "health_insurance_no",
+        "bank_account"
+      ],
+      "sensitive_block": [
+        "health_status",
+        "criminal_record",
+        "political_view",
+        "religion",
+        "biometric"
+      ],
+      "high_density_adversarial_recipe": {
+        "desc": "Record khó: >=3 chuỗi số dài đồng hiện, gồm cả PII thật lẫn distractor CÙNG BỀ MẶT.",
+        "example_mix": [
+          "cccd (12 số)",
+          "driver_license (12 số)",
+          "mã biên nhận (12 số, O)",
+          "social_insurance_no (10 số)",
+          "tax_code (10 số)",
+          "ngày tiếp nhận (dd/mm/yyyy, O)",
+          "dob (dd/mm/yyyy)"
+        ],
+        "forces": "model phải dùng ngữ cảnh để phân biệt cùng-bề-mặt-khác-vai-trò",
+        "link_factors": [
+          "multiple_numeric_distractors",
+          "same_surface_different_role",
+          "scattered_pii",
+          "mixed_field_order"
+        ]
+      },
+      "multi_person": {
+        "desc": ">=2 người (chủ thể + thân nhân + cán bộ) -> nhiều full_name/phone; chỉ annotate đúng vai trò; cán bộ xử lý = distractor O.",
+        "link_factors": [
+          "agency_person_name_distractor",
+          "multi_person_context"
+        ]
+      }
+    },
+    "ood_policy": {
+      "ratio_target": 0.08,
+      "per_field": {
+        "full_name": [
+          "tên nước ngoài (John Smith, Kim Min-jun)",
+          "tên dân tộc thiểu số không từ khoá (Giàng A Pao, Sơn Thị Sa Pôl) — dùng profile_core.ethnic_names",
+          "tên ghép rất dài (>5 token)"
+        ],
+        "given_name": [
+          "tên hiếm/đơn âm tiết bất thường",
+          "tên nước ngoài"
+        ],
+        "phone": [
+          "số nước ngoài (+1, +82, +44)",
+          "mã vùng cố định hiếm"
+        ],
+        "cccd": [
+          "mã tỉnh ranh giới (096)",
+          "CMND cũ 9 số",
+          "người nước ngoài KHÔNG có CCCD (chỉ hộ chiếu)"
+        ],
+        "dob": [
+          "rất già (1925)",
+          "trẻ sơ sinh (2024)",
+          "29/02 năm nhuận",
+          "chỉ có năm"
+        ],
+        "ethnicity": [
+          "dân tộc rất hiếm (Rơ Măm, Brâu, Ơ Đu, Pu Péo)",
+          "nguồn gốc nước ngoài"
+        ],
+        "religion": [
+          "hiếm (Bà-la-môn, Bửu Sơn Kỳ Hương, Tứ Ân Hiếu Nghĩa)"
+        ],
+        "nationality": [
+          "không/đang xác định quốc tịch (người gốc Việt chưa có quốc tịch)",
+          "song tịch"
+        ],
+        "address": [
+          "địa chỉ 2 cấp mới (không có quận/huyện)",
+          "đảo/vùng xa (Trường Sa, Mường Nhé)",
+          "địa chỉ nước ngoài"
+        ],
+        "vehicle_plate": [
+          "biển ngoại giao NN/QT",
+          "biển xe điện (nền xanh)",
+          "biển 3-4 số kiểu cũ"
+        ],
+        "bank_account": [
+          "số TK rất ngắn/rất dài theo ngân hàng đặc thù",
+          "IBAN nước ngoài"
+        ]
+      },
+      "link_factors": [
+        "unbounded_new_identifier",
+        "unrecoverable_ambiguity"
+      ]
+    },
+    "registry_factor_map": {
+      "note": "Cơ chế trong hard_case_policy <-> ID factor trong narrative_style_registry.difficulty_policy.factor_pool.",
+      "confusable_catalog": [
+        "non_pii_codes_near_ids",
+        "non_pii_dates_near_dob",
+        "multiple_numeric_distractors",
+        "same_surface_different_role",
+        "agency_person_name_distractor",
+        "wrong_context_locked_value",
+        "hard_adversarial_numbers"
+      ],
+      "noise_policy": [
+        "ocr_noise_outside_locked_values",
+        "(ĐỀ XUẤT MỚI) noisy_locked_text",
+        "(MỚI) deaccented_entity",
+        "(MỚI) abbreviated_entity",
+        "(MỚI) separator_drift_id"
+      ],
+      "keyword_optionality": [
+        "label_absent",
+        "soft_label",
+        "no_label_value",
+        "indirect_context"
+      ],
+      "cooccurrence_groups": [
+        "multiple_numeric_distractors",
+        "scattered_pii",
+        "multi_occurrence",
+        "dense_context_hints",
+        "multi_person_context",
+        "mixed_field_order",
+        "nested_span"
+      ],
+      "ood_policy": [
+        "unbounded_new_identifier (một phần)",
+        "(MỚI) ood_entity"
+      ],
+      "implemented_in_notebook_now": [
+        "hard_adversarial_numbers->receipt_code_12d",
+        "non_pii_codes_near_ids->procedure_code",
+        "non_pii_dates_near_dob->received_date",
+        "agency_person_name_distractor->officer_name",
+        "corrected_identifier->cccd sai 1 chữ số"
+      ],
+      "defined_but_NOT_implemented_yet": [
+        "same_surface_different_role",
+        "label_absent (chưa render bare thực thụ)",
+        "noise ÁP LÊN thực thể",
+        "ood_entity",
+        "fake_locked_value",
+        "unbounded_new_identifier",
+        "wrong_context_locked_value",
+        "nested_span",
+        "unrecoverable_ambiguity",
+        "scattered_pii (đầy đủ)"
+      ],
+      "action": "Bổ sung 5 factor MỚI vào registry.difficulty_policy.factor_pool và hiện thực builder cho các factor 'defined_but_NOT_implemented' trong notebook (build_adversarial_controls + bước render)."
+    },
+    "annotation_invariants": [
+      "Khi làm nhiễu/không-từ-khoá: locked_value = ĐÚNG chuỗi bề mặt trong text (offset span chính xác).",
+      "Distractor true-negative KHÔNG nằm trong locked_values/spans (nhãn O).",
+      "Tên cán bộ/cơ quan, địa chỉ cơ quan, tổng đài, mã biên nhận -> KHÔNG annotate là PII của chủ thể.",
+      "same_surface_different_role giữa 2 LOẠI PII (cccd vs gplx, cùng 12 số): nhãn quyết định bởi từ khoá gần nhất; nếu mơ hồ không cứu được -> factor unrecoverable_ambiguity.",
+      "Khi cùng record có nhiều người: gán PII đúng chủ thể; PII của thân nhân annotate nhưng đánh dấu thuộc người khác."
+    ]
+  },
+  "_changelog_2_6": {
+    "from": "2.5.0",
+    "to": "2.6.0",
+    "summary": "Thêm lớp tình huống KHÓ/ĐỐI KHÁNG (confusable/true-negative, nhiễu trên thực thể, không từ khoá, đồng hiện, OOD) + sửa ref/format khớp profile_core.",
+    "added": [
+      "hard_case_policy: confusable_catalog, noise_policy, keyword_optionality, cooccurrence_groups, ood_policy, registry_factor_map, annotation_invariants.",
+      "Per-field 'hard_cases' cho ~24 field hay nhầm."
+    ],
+    "fixed_refs": [
+      "health_status.{hospital} ref: domain_seeds.health -> healthcare (đúng key profile_core).",
+      "health_insurance_no: hoà giải QĐ1666 (10 số = mã BHXH) + legacy 15 ký tự.",
+      "tax_code: chấp nhận 13 số có/không dấu gạch (khớp profile_core.tax_id)."
+    ],
+    "findings_outside_schema": [
+      "narrative_style_registry.json BỊ LỖI ENCODING (mojibake 'Kh?','Trung b?nh' ở difficulty_levels/voices/field_realizers) -> cần lưu lại UTF-8.",
+      "Nhiều factor đối kháng ĐÃ ĐỊNH NGHĨA trong registry nhưng notebook CHƯA hiện thực (xem registry_factor_map.defined_but_NOT_implemented_yet) -> khoảng trống ở NOTEBOOK.",
+      "synthetic_output.json có CCCD ĐÚNG cấu trúc; make_profile_fake() trong notebook thì SAI -> nên cho builder cccd tái lập đúng như synthetic_output."
+    ]
+  },
+  "_changelog_2_7": {
+    "from": "2.6.0",
+    "to": "2.7.0",
+    "changes": [
+      "Đổi field tên: BỎ family_name/middle_name/given_name -> dùng last_name (họ) + first_name (tên, đã gộp chữ đệm).",
+      "social_insurance_no & health_insurance_no: PII -> SPI (Điều 4); cập nhật matrix_summary & pipeline_mapping.",
+      "driver_license: siết regex digit giới tính [0-5] -> [0-3] cho đúng TK20/21 (0,1,2,3); cấu trúc 2+1+2+7 giữ nguyên (đã đúng)."
+    ]
+  },
+  "_changelog_2_8": {
+    "from": "2.7.0",
+    "to": "2.8.0",
+    "changes": [
+      "Hoàn nguyên field tên: dùng lại family_name + middle_name + given_name (bỏ first_name/last_name).",
+      "Giữ nguyên: BHXH/BHYT = SPI (v2.7) và driver_license regex [0-3] (v2.7)."
+    ]
+  },
+  "gen_mode_policy": {
+    "description": "Mỗi field thuộc 1 trong 4 chế độ sinh, điều khiển cách pipeline tạo & gắn nhãn.",
+    "modes": {
+      "exact_bank": "Lấy CHÍNH XÁC từ profile_bank, dùng nguyên văn, khoá làm nhãn ground-truth.",
+      "optional_bank": "Như exact_bank nhưng CÓ THỂ rỗng (giấy tờ không phải ai cũng có).",
+      "bank_rewrite": "Kho giữ GIÁ TRỊ GỐC (seed) làm ground-truth; LLM VIẾT LẠI bề mặt cho đa dạng; span kết quả là nhãn.",
+      "llm_full": "KHÔNG nướng vào kho (để trống bằng sentinel '[[LLM_GENERATE]]'); LLM SINH MỚI hoàn toàn lúc runtime để tối đa đa dạng."
+    },
+    "sentinel_for_llm_full": "[[LLM_GENERATE]]",
+    "fields_by_mode": {
+      "exact_bank": [
+        "full_name",
+        "family_name",
+        "middle_name",
+        "given_name",
+        "dob",
+        "gender",
+        "address",
+        "nationality",
+        "photo",
+        "phone",
+        "cccd",
+        "marital_status",
+        "digital_account",
+        "email",
+        "ethnicity",
+        "political_view",
+        "religion",
+        "sexual_orientation",
+        "eid_credentials",
+        "bank_account"
+      ],
+      "bank_rewrite": [
+        "name_alias",
+        "family_relations",
+        "health_status",
+        "criminal_record",
+        "location_data"
+      ],
+      "optional_bank": [
+        "passport_number",
+        "driver_license",
+        "vehicle_plate",
+        "tax_code",
+        "social_insurance_no",
+        "health_insurance_no"
+      ],
+      "llm_full": [
+        "private_life",
+        "biometric",
+        "behavioral_data"
+      ]
+    },
+    "note": "build_profiles.py mặc định để trống field llm_full; dùng --bake-llm để nướng giá trị mẫu thay vì sentinel.",
+    "llm_generate_prob": {
+      "description": "Với field 'mềm', mỗi record có xác suất này được đặt sentinel '[[LLM_GENERATE]]' (LLM sinh mới) thay vì dùng giá trị kho -> trộn nguồn, tăng đa dạng.",
+      "applies_only_to": "Field định danh/đúng-cấu-trúc (tên, cccd, phone, dob, giấy tờ số...) = 0.",
+      "scale_flag": "build_profiles.py --llm-prob-scale X để nhân toàn bộ xác suất (mặc định 1.0); --bake-llm tắt hết sentinel.",
+      "values": {
+        "name_alias": 0.3,
+        "marital_status": 0.1,
+        "family_relations": 0.3,
+        "digital_account": 0.3,
+        "political_view": 0.25,
+        "religion": 0.1,
+        "private_life": 1.0,
+        "health_status": 0.3,
+        "biometric": 1.0,
+        "sexual_orientation": 0.15,
+        "criminal_record": 0.3,
+        "location_data": 0.3,
+        "behavioral_data": 1.0
+      }
+    }
+  },
+  "_changelog_2_9": {
+    "from": "2.8.0",
+    "to": "2.9.0",
+    "changes": [
+      "Thêm 'gen_mode' cho MỌI field (exact_bank | optional_bank | bank_rewrite | llm_full) + 'gen_mode_policy'.",
+      "private_life/behavioral_data/biometric -> llm_full (sinh runtime cho đa dạng); health_status/criminal_record/family_relations/location_data/name_alias -> bank_rewrite (LLM viết lại từ seed)."
+    ]
+  },
+  "_changelog_2_10": {
+    "from": "2.9.0",
+    "to": "2.10.0",
+    "changes": [
+      "Thêm 'llm_generate_prob' cho field mềm (political_view, criminal_record, health_status, family_relations, digital_account, name_alias, location_data, occupation, religion, marital_status, sexual_orientation): mỗi record có xác suất thành [[LLM_GENERATE]] để đa dạng nguồn.",
+      "Field định danh/cấu-trúc giữ prob=0."
+    ]
+  }
+}

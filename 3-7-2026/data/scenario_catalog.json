@@ -1,0 +1,281 @@
+{
+  "_meta": {
+    "artifact": "scenario_catalog",
+    "version": "0.1.0-draft",
+    "created_for": "SecurePrep Track B (SPI scenario-first generation)",
+    "purpose": "Danh mục kịch bản sinh dữ liệu SPI trong NGỮ CẢNH tự nhiên. Thay việc nhồi SPI vào form hành chính (corpus form ~90% rỗng SPI) bằng: chọn SPI -> chọn loại văn bản nơi SPI bộc lộ hợp lý -> LLM viết -> annotate. Constraint-First: code kiểm soát giá trị, LLM chỉ viết ngữ cảnh.",
+    "links": {
+      "schema": "pii_schema.json",
+      "profiles": "profile_bank.jsonl",
+      "form_seeds": "form.json",
+      "annotate_design": "3 lớp: verbatim / cue-context / anchor-tag (xem memory securepi-annotate-design)"
+    }
+  },
+
+  "_conventions": {
+    "doc_type": ["form", "record", "declaration", "narrative", "letter", "hybrid"],
+    "register": ["administrative", "semi_prose", "prose"],
+    "subject_type": ["citizen", "citizen+relative", "citizen+multi"],
+    "pii_density_tier": ["low", "mid", "high"],
+    "cue_style": {
+      "labeled": "PII/SPI đứng sau nhãn dẫn (Họ tên:, Tình trạng sức khỏe:) - ca dễ",
+      "mixed": "một phần có nhãn, một phần trong câu",
+      "unlabeled": "PII/SPI trong văn xuôi KHÔNG nhãn dẫn - ca khó, chống lười keyword"
+    },
+    "difficulty": ["easy", "medium", "hard"],
+    "seed.mode": {
+      "reuse": "tái dùng form thật từ form.json làm khung (template_id)",
+      "synthetic": "không có form phù hợp -> LLM dựng khung từ đầu"
+    },
+    "spi_targets": "nhóm SPI mà kịch bản này bộc lộ TỰ NHIÊN (1-2 chính; trần 2 - dữ liệu: >=3 SPI/văn bản gần như không xảy ra tự nhiên)",
+    "cooccur_fields": "field đồng hiện, lấy theo hard_case_policy.cooccurrence_groups trong pii_schema.json",
+    "weight": "trọng số lấy mẫu tương đối; kịch bản SPI hiếm để weight CAO hơn tần suất tự nhiên (over-sample ca hiếm)"
+  },
+
+  "_defaults": {
+    "_note": "THAM SỐ QUY MÔ - default, user chỉnh. Không chặn cấu trúc catalog.",
+    "total_target_docs": 20000,
+    "track_ratio": { "A_pii_forms": 0.6, "B_spi_scenarios": 0.4 },
+    "spi_floor_per_category": { "rare": 800, "common": 1200 },
+    "rare_categories": ["sexual_orientation", "biometric", "criminal_record"],
+    "unlabeled_min_share": 0.3,
+    "clean_doc_share": 0.10,
+    "hard_negative_share": 0.075,
+    "allocation_rule": "docs_per_scenario = round( TrackB_total * weight / sum(weight) ); kiểm lại đạt spi_floor mỗi nhóm, thiếu thì tăng weight kịch bản tương ứng."
+  },
+
+  "scenarios": [
+    {
+      "id": "sc_health_welfare",
+      "title": "Đơn đề nghị trợ cấp xã hội / hỗ trợ người khuyết tật",
+      "doc_type": "form", "register": "administrative", "subject_type": "citizen",
+      "spi_targets": ["health_status", "private_life"],
+      "disclosure_reason": "Người khuyết tật/hoàn cảnh khó khăn phải khai tình trạng sức khỏe để được xét trợ cấp.",
+      "cooccur_fields": ["full_name", "dob", "gender", "cccd", "address", "phone", "health_status", "private_life"],
+      "pii_density_tier": "mid", "cue_style": "mixed", "difficulty": "medium",
+      "seed": { "mode": "reuse", "template_id": "1.001776", "record_type_hint": "trợ cấp xã hội hàng tháng" },
+      "weight": 6,
+      "supplemental_attributes": [
+        { "key": "recipient_org", "kind": "org", "pool": ["Ủy ban nhân dân phường", "Phòng Lao động - Thương binh và Xã hội"] },
+        { "key": "record_code", "kind": "doc_code", "format": "num12", "desc": "Mã hồ sơ tiếp nhận" }
+      ]
+    },
+    {
+      "id": "sc_health_discharge",
+      "title": "Giấy ra viện / tóm tắt bệnh án",
+      "doc_type": "record", "register": "semi_prose", "subject_type": "citizen",
+      "spi_targets": ["health_status"],
+      "disclosure_reason": "Văn bản y tế mô tả chẩn đoán, điều trị - SPI sức khỏe là nội dung chính.",
+      "cooccur_fields": ["full_name", "dob", "gender", "address", "health_insurance_no", "health_status"],
+      "pii_density_tier": "mid", "cue_style": "mixed", "difficulty": "medium",
+      "seed": { "mode": "synthetic" },
+      "weight": 6
+    },
+    {
+      "id": "sc_health_occup",
+      "title": "Hồ sơ giám định tai nạn lao động / bệnh nghề nghiệp (BHXH)",
+      "doc_type": "form", "register": "administrative", "subject_type": "citizen",
+      "spi_targets": ["health_status"],
+      "disclosure_reason": "Giám định suy giảm khả năng lao động để hưởng chế độ BHXH -> phải nêu thương tật/bệnh.",
+      "cooccur_fields": ["full_name", "dob", "cccd", "address", "social_insurance_no", "health_status"],
+      "pii_density_tier": "mid", "cue_style": "labeled", "difficulty": "medium",
+      "seed": { "mode": "synthetic", "record_type_hint": "bảo hiểm tai nạn lao động, bệnh nghề nghiệp" },
+      "weight": 4
+    },
+    {
+      "id": "sc_health_leave_narrative",
+      "title": "Đơn/tường trình xin nghỉ vì lý do sức khỏe (văn xuôi)",
+      "doc_type": "narrative", "register": "prose", "subject_type": "citizen",
+      "spi_targets": ["health_status"],
+      "disclosure_reason": "Cá nhân kể lý do sức khỏe trong đơn xin nghỉ - SPI trong câu, không nhãn.",
+      "cooccur_fields": ["full_name", "phone", "health_status"],
+      "pii_density_tier": "low", "cue_style": "unlabeled", "difficulty": "hard",
+      "seed": { "mode": "synthetic" },
+      "weight": 4
+    },
+
+    {
+      "id": "sc_crim_lltp",
+      "title": "Phiếu lý lịch tư pháp",
+      "doc_type": "record", "register": "administrative", "subject_type": "citizen",
+      "spi_targets": ["criminal_record"],
+      "disclosure_reason": "Phiếu LLTP ghi nhận án tích/không án tích - đây là nội dung định danh của văn bản.",
+      "cooccur_fields": ["full_name", "dob", "gender", "cccd", "address", "criminal_record"],
+      "pii_density_tier": "mid", "cue_style": "labeled", "difficulty": "medium",
+      "seed": { "mode": "synthetic" },
+      "weight": 5
+    },
+    {
+      "id": "sc_crim_erase",
+      "title": "Đơn xin xóa án tích",
+      "doc_type": "declaration", "register": "semi_prose", "subject_type": "citizen",
+      "spi_targets": ["criminal_record"],
+      "disclosure_reason": "Người từng có án làm đơn xin xóa -> kể lại bản án, quyết định.",
+      "cooccur_fields": ["full_name", "dob", "cccd", "address", "criminal_record"],
+      "pii_density_tier": "mid", "cue_style": "mixed", "difficulty": "medium",
+      "seed": { "mode": "synthetic" },
+      "weight": 4,
+      "supplemental_attributes": [
+        { "key": "court", "kind": "org", "pool": ["Tòa án nhân dân tỉnh", "Tòa án nhân dân thành phố"] }
+      ]
+    },
+    {
+      "id": "sc_crim_declare_hard",
+      "title": "Tờ khai lý lịch có mục tiền án (xin việc/nhập ngũ) - CÓ DISTRACTOR",
+      "doc_type": "form", "register": "administrative", "subject_type": "citizen",
+      "spi_targets": ["criminal_record"],
+      "disclosure_reason": "Khai tiền án trong lý lịch; chèn số quyết định 12-số cạnh CCCD 12-số làm distractor (vấn đề 4).",
+      "cooccur_fields": ["full_name", "dob", "cccd", "criminal_record"],
+      "pii_density_tier": "mid", "cue_style": "labeled", "difficulty": "hard",
+      "adversarial": ["số_quyết_định_12số_cạnh_cccd", "mã_hồ_sơ_12số_label_O"],
+      "seed": { "mode": "synthetic" },
+      "weight": 4
+    },
+
+    {
+      "id": "sc_syll_selfdeclare",
+      "title": "Sơ yếu lý lịch tự khai",
+      "doc_type": "declaration", "register": "administrative", "subject_type": "citizen",
+      "spi_targets": ["religion"],
+      "disclosure_reason": "SYLL khai dân tộc/tôn giáo - nơi duy nhất các SPI này xuất hiện tự nhiên.",
+      "cooccur_fields": ["full_name", "dob", "gender", "cccd", "address", "ethnicity", "religion", "family_relations"],
+      "pii_density_tier": "high", "cue_style": "labeled", "difficulty": "hard",
+      "note": "TEST cue-context: religion='Không', ethnicity='Kinh' là từ phổ biến -> chỉ gán trong cửa sổ nhãn (Lớp 2.5 annotate).",
+      "seed": { "mode": "synthetic" },
+      "weight": 6,
+      "supplemental_attributes": [
+        { "key": "recipient_org", "kind": "org", "pool": ["Ban Tổ chức cơ quan", "Sở Nội vụ", "Phòng Nội vụ quận"] },
+        { "key": "relative", "kind": "person", "relation": "mẹ", "fields": ["full_name", "cccd", "phone", "dob", "address"] }
+      ]
+    },
+    {
+      "id": "sc_religion_activity",
+      "title": "Đơn đăng ký sinh hoạt tôn giáo",
+      "doc_type": "declaration", "register": "semi_prose", "subject_type": "citizen",
+      "spi_targets": ["religion"],
+      "disclosure_reason": "Đăng ký hoạt động tôn giáo -> nêu tôn giáo, tổ chức tôn giáo.",
+      "cooccur_fields": ["full_name", "dob", "cccd", "address", "religion"],
+      "pii_density_tier": "low", "cue_style": "mixed", "difficulty": "medium",
+      "seed": { "mode": "synthetic" },
+      "weight": 3
+    },
+
+    {
+      "id": "sc_sexori_medical",
+      "title": "Hồ sơ tư vấn y tế / tâm lý (đề cập xu hướng tính dục)",
+      "doc_type": "record", "register": "dialogue", "subject_type": "citizen",
+      "spi_targets": ["sexual_orientation", "health_status"],
+      "disclosure_reason": "Bối cảnh tư vấn y tế/tâm lý là nơi xu hướng tính dục được nêu hợp lý, kín đáo.",
+      "cooccur_fields": ["full_name", "dob", "gender", "sexual_orientation", "health_status"],
+      "pii_density_tier": "low", "cue_style": "unlabeled", "difficulty": "hard",
+      "note": "sexual_orientation chỉ 6 giá trị + cực hiếm -> đa dạng NGỮ CẢNH mạnh, bật diversity.max_share_per_value, chống học vẹt.",
+      "seed": { "mode": "synthetic" },
+      "weight": 5
+    },
+    {
+      "id": "sc_sexori_hotich",
+      "title": "Đơn cải chính hộ tịch / thông tin liên quan giới tính",
+      "doc_type": "declaration", "register": "semi_prose", "subject_type": "citizen",
+      "spi_targets": ["sexual_orientation"],
+      "disclosure_reason": "Thủ tục hộ tịch liên quan xác định lại giới tính -> bộc lộ SPI này.",
+      "cooccur_fields": ["full_name", "dob", "gender", "cccd", "sexual_orientation"],
+      "pii_density_tier": "low", "cue_style": "mixed", "difficulty": "hard",
+      "seed": { "mode": "synthetic" },
+      "weight": 4
+    },
+
+
+    {
+      "id": "sc_bio_adn",
+      "title": "Kết quả giám định ADN / y sinh",
+      "doc_type": "record", "register": "semi_prose", "subject_type": "citizen+relative",
+      "spi_targets": ["biometric"],
+      "disclosure_reason": "Văn bản giám định huyết thống/y sinh -> dữ liệu di truyền.",
+      "cooccur_fields": ["full_name", "dob", "cccd", "biometric", "family_relations"],
+      "pii_density_tier": "mid", "cue_style": "mixed", "difficulty": "medium",
+      "seed": { "mode": "synthetic" },
+      "weight": 4
+    },
+
+    {
+      "id": "sc_priv_poverty",
+      "title": "Đơn công nhận hộ nghèo / hoàn cảnh khó khăn",
+      "doc_type": "form", "register": "administrative", "subject_type": "citizen+relative",
+      "spi_targets": ["private_life", "family_relations"],
+      "disclosure_reason": "Xét hộ nghèo -> khai thu nhập, hoàn cảnh gia đình (đời tư).",
+      "cooccur_fields": ["full_name", "dob", "cccd", "address", "private_life", "family_relations"],
+      "pii_density_tier": "mid", "cue_style": "mixed", "difficulty": "medium",
+      "seed": { "mode": "synthetic" },
+      "weight": 4
+    },
+    {
+      "id": "sc_priv_divorce",
+      "title": "Đơn ly hôn / trình bày mâu thuẫn gia đình",
+      "doc_type": "narrative", "register": "prose", "subject_type": "citizen+relative",
+      "spi_targets": ["private_life", "family_relations"],
+      "disclosure_reason": "Đương sự kể hoàn cảnh hôn nhân, tranh chấp - đời tư trong văn xuôi.",
+      "cooccur_fields": ["full_name", "dob", "cccd", "address", "private_life", "family_relations", "marital_status"],
+      "pii_density_tier": "mid", "cue_style": "unlabeled", "difficulty": "hard",
+      "seed": { "mode": "synthetic" },
+      "weight": 4
+    },
+    {
+      "id": "sc_priv_statement",
+      "title": "Biên bản xác minh hoàn cảnh gia đình (góc nhìn thứ ba)",
+      "doc_type": "record", "register": "third_person", "subject_type": "citizen",
+      "spi_targets": ["private_life"],
+      "disclosure_reason": "Cán bộ địa phương hoặc điều tra viên lập biên bản xác minh hoàn cảnh khó khăn của công dân để xét hỗ trợ.",
+      "cooccur_fields": ["full_name", "phone", "address", "private_life"],
+      "pii_density_tier": "low", "cue_style": "unlabeled", "difficulty": "medium",
+      "seed": { "mode": "synthetic" },
+      "weight": 3
+    },
+
+    {
+      "id": "sc_loc_verify",
+      "title": "Biên bản xác minh dữ liệu vị trí / định vị thiết bị",
+      "doc_type": "record", "register": "third_person", "subject_type": "citizen",
+      "spi_targets": ["location_data"],
+      "disclosure_reason": "Xác minh vị trí qua dịch vụ định vị - SPI vị trí là nội dung.",
+      "cooccur_fields": ["full_name", "phone", "digital_account", "location_data"],
+      "pii_density_tier": "low", "cue_style": "mixed", "difficulty": "medium",
+      "seed": { "mode": "synthetic" },
+      "weight": 3
+    },
+    {
+      "id": "sc_behav_log",
+      "title": "Xác minh hoạt động trên không gian mạng / nhật ký số",
+      "doc_type": "record", "register": "third_person", "subject_type": "citizen",
+      "spi_targets": ["behavioral_data"],
+      "disclosure_reason": "Ghi nhận lịch sử hoạt động số của cá nhân.",
+      "cooccur_fields": ["full_name", "email", "digital_account", "behavioral_data"],
+      "pii_density_tier": "low", "cue_style": "mixed", "difficulty": "hard",
+      "seed": { "mode": "synthetic" },
+      "weight": 3
+    },
+
+    {
+      "id": "sc_multi_household_hard",
+      "title": "Hồ sơ hộ gia đình nhiều thành viên - ĐA CHỦ THỂ",
+      "doc_type": "form", "register": "administrative", "subject_type": "citizen+multi",
+      "spi_targets": ["health_status", "private_life"],
+      "disclosure_reason": "Nhiều người trong 1 văn bản -> nhiều tên/CCCD khác nhau. Test annotate 'CCCD của ai' (vấn đề 2+5).",
+      "cooccur_fields": ["full_name", "dob", "cccd", "address", "family_relations", "health_status"],
+      "pii_density_tier": "high", "cue_style": "mixed", "difficulty": "hard",
+      "note": "Cần nạp >=2 profile; anchor-tag mang subject_id.",
+      "seed": { "mode": "synthetic" },
+      "weight": 4
+    },
+    {
+      "id": "sc_war_merit",
+      "title": "Xét chế độ người có công / tham gia kháng chiến",
+      "doc_type": "form", "register": "administrative", "subject_type": "citizen+relative",
+      "spi_targets": ["health_status", "private_life"],
+      "disclosure_reason": "Xét chế độ -> khai thương tật, hoàn cảnh, đôi khi lý lịch.",
+      "cooccur_fields": ["full_name", "dob", "cccd", "address", "health_status", "private_life", "family_relations"],
+      "pii_density_tier": "mid", "cue_style": "mixed", "difficulty": "medium",
+      "seed": { "mode": "reuse", "template_id": "1.003777", "record_type_hint": "kháng chiến / người có công" },
+      "weight": 3
+    }
+  ]
+}

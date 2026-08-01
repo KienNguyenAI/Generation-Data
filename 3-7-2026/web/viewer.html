@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SecurePrep — Span Viewer</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --panel:#ffffff; --ink:#1f2430; --muted:#6b7280; --line:#e4e7ec;
+    --accent:#2563eb; --pii:#2563eb; --spi:#dc2626;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f1420; --panel:#161c2b; --ink:#e6e9ef; --muted:#9aa4b2; --line:#26304a; }
+  }
+  *{ box-sizing:border-box }
+  body{ margin:0; font:15px/1.5 system-ui,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--ink); }
+  header{ padding:14px 20px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1{ margin:0; font-size:17px; } header p{ margin:4px 0 0; color:var(--muted); font-size:13px; }
+  .wrap{ padding:16px 20px; max-width:1300px; margin:0 auto; }
+  .io{ display:flex; gap:10px; align-items:flex-start; }
+  textarea{ flex:1; min-height:74px; max-height:180px; resize:vertical; font:12px/1.45 ui-monospace,Consolas,monospace;
+    padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); }
+  .btns{ display:flex; flex-direction:column; gap:6px; }
+  button{ padding:8px 14px; border:1px solid var(--line); border-radius:8px; background:var(--accent); color:#fff;
+    cursor:pointer; font-size:13px; white-space:nowrap; }
+  button.ghost{ background:transparent; color:var(--ink); }
+  button:hover{ filter:brightness(1.05) }
+  #err{ color:var(--spi); font-size:13px; margin:8px 0 0; min-height:18px; }
+  .bar{ display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin:12px 0; font-size:12px; color:var(--muted); }
+  .chip{ display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px; border:1px solid var(--line);
+    cursor:pointer; user-select:none; }
+  .chip .dot{ width:10px; height:10px; border-radius:3px; }
+  .chip.off{ opacity:.35; text-decoration:line-through; }
+  .panes{ display:grid; grid-template-columns:1.5fr 1fr; gap:14px; }
+  @media (max-width:860px){ .panes{ grid-template-columns:1fr } .io{ flex-direction:column } }
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+  .panel h2{ margin:0; padding:10px 14px; font-size:13px; color:var(--muted); border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; }
+  #doc{ padding:16px; white-space:pre-wrap; word-break:break-word; line-height:2.0; max-height:66vh; overflow:auto; }
+  #list{ list-style:none; margin:0; padding:6px; max-height:66vh; overflow:auto; }
+  .tok{ border-radius:4px; padding:0 2px; cursor:pointer; border-bottom:2px solid transparent; transition:background .1s; }
+  .tok.hi{ outline:2px solid var(--ink); outline-offset:1px; }
+  #list li{ padding:8px 10px; border-radius:8px; border-left:4px solid var(--line); margin:4px 2px; cursor:pointer; }
+  #list li.hi{ background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  #list li .top{ display:flex; gap:8px; align-items:center; font-size:12px; }
+  #list li .txt{ font-size:13px; margin-top:3px; }
+  #list li .off{ color:var(--muted); font-size:11px; margin-left:auto; font-family:ui-monospace,monospace; }
+  .badge{ font-size:10px; font-weight:700; padding:1px 6px; border-radius:999px; color:#fff; }
+  .badge.PII{ background:var(--pii) } .badge.SPI{ background:var(--spi) } .badge.other{ background:#6b7280 }
+  .fname{ font-weight:600 }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  select:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-file:hover { background: var(--bg) !important; border-color: var(--muted) !important; }
+  .dataset-control svg { vertical-align: middle; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SecurePrep — Trình xem Span (PII/SPI)</h1>
+  <p>Dán JSON output (có <code>content</code> + <code>spans</code>) → bấm Hiển thị. Rê vào 1 span (ở danh sách hoặc trong văn bản) để làm nổi bật đồng bộ.</p>
+</header>
+
+<div class="wrap">
+  <!-- Bộ dữ liệu (Dataset) -->
+  <div class="panel dataset-control" style="margin-bottom:16px; padding:16px;">
+    <h3 style="margin:0 0 12px; font-size:14px; font-weight:600; display:flex; justify-content:space-between; align-items:center;">
+      <span>Bộ dữ liệu (Dataset)</span>
+      <span id="ds-status" style="font-size:12px; font-weight:normal; color:var(--muted);">Chưa tải dataset</span>
+    </h3>
+    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+      <label class="btn-file" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); cursor:pointer; font-size:13px; font-weight:500; transition:all 0.2s;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Chọn file dataset.jsonl
+        <input type="file" id="ds-file" accept=".jsonl" style="display:none;" />
+      </label>
+      
+      <select id="ds-preset" style="padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); font-size:13px; outline:none;">
+        <option value="dataset.jsonl">Baseline V1 (dataset.jsonl)</option>
+        <option value="dataset_v2.jsonl">Form-Guided V2 (dataset_v2.jsonl)</option>
+        <option value="dataset_form_driven.jsonl">Form-Driven V3 (dataset_form_driven.jsonl)</option>
+        <option value="dataset_form_driven_v2.jsonl" selected>Form-Driven V3 Refined (dataset_form_driven_v2.jsonl)</option>
+      </select>
+      
+      <button id="ds-load-default" class="ghost" style="padding:8px 14px; display:inline-flex; align-items:center; gap:6px;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H16v5"/></svg>
+        Tải tự động
+      </button>
+
+      <div style="flex:1; display:flex; gap:8px; align-items:center; min-width:280px;">
+        <button id="ds-prev" class="ghost" style="padding:8px 12px;" disabled>&larr; Trước</button>
+        <select id="ds-select" style="flex:1; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); font-size:13px;" disabled>
+          <option>-- Chọn record --</option>
+        </select>
+        <button id="ds-next" class="ghost" style="padding:8px 12px;" disabled>Sau &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="io">
+    <textarea id="input" placeholder='Dán JSON ở đây, ví dụ: {"content":"...","spans":[{"start":0,"end":5,"field":"full_name","label":"PII"}]}'></textarea>
+    <div class="btns">
+      <button id="go">Hiển thị</button>
+      <button id="ex" class="ghost">Tải ví dụ</button>
+      <button id="clr" class="ghost">Xoá</button>
+    </div>
+  </div>
+  <div id="err"></div>
+
+  <div class="bar" id="legend"></div>
+
+  <div class="panes">
+    <section class="panel">
+      <h2><span>Văn bản</span><span id="docmeta"></span></h2>
+      <div id="doc"></div>
+    </section>
+    <section class="panel">
+      <h2><span>Spans</span><span id="cnt"></span></h2>
+      <ul id="list"></ul>
+    </section>
+  </div>
+</div>
+
+<script type="application/json" id="sample">
+{"profile_id":"pf_demo","scenario":"demo","content":"Tôi là Đoàn Gia Đức Kiệt, sinh ngày 04/12/1973, số định danh 040073265423.\nVề sức khỏe, tôi bị khuyết tật vận động ở chân phải.\nNgười làm đơn\nKiệt","spans":[{"start":7,"end":24,"field":"full_name","label":"PII","text":"Đoàn Gia Đức Kiệt","via":"verbatim"},{"start":36,"end":46,"field":"dob","label":"PII","text":"04/12/1973","via":"verbatim"},{"start":61,"end":73,"field":"cccd","label":"PII","text":"040073265423","via":"verbatim"},{"start":95,"end":126,"field":"health_status","label":"SPI","text":"khuyết tật vận động ở chân phải","via":"anchor_tag"},{"start":142,"end":146,"field":"given_name","label":"PII","text":"Kiệt","via":"name_component"}],"meta":{"n_spans":5}}
+</script>
+
+<script>
+const $ = s => document.querySelector(s);
+const doc = $("#doc"), list = $("#list"), errEl = $("#err"), legend = $("#legend");
+const hidden = new Set();            // field bị ẩn (bấm legend)
+let CUR = null;                       // record hiện tại
+
+// ---- màu theo field ----
+const PALETTE = ["#2563eb","#dc2626","#059669","#d97706","#7c3aed","#0891b2","#db2777","#65a30d",
+                 "#ea580c","#4f46e5","#0d9488","#b45309","#be123c","#4338ca","#15803d","#a21caf"];
+const colorMap = {};
+function colorFor(f){
+  if(!(f in colorMap)){
+    const n = Object.keys(colorMap).length;
+    colorMap[f] = n < PALETTE.length ? PALETTE[n] : `hsl(${(n*67)%360} 65% 45%)`;
+  }
+  return colorMap[f];
+}
+const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const badgeCls = l => (l==="PII"||l==="SPI") ? l : "other";
+
+function scrollWithin(box, el){
+  const b = box.getBoundingClientRect(), e = el.getBoundingClientRect();
+  box.scrollTop += (e.top - b.top) - box.clientHeight/2 + el.offsetHeight/2;
+}
+
+function parse(){
+  errEl.textContent = "";
+  let raw = $("#input").value.trim();
+  if(!raw){ errEl.textContent = "Chưa có JSON."; return; }
+  let rec;
+  try{ rec = JSON.parse(raw); }
+  catch(e){ errEl.textContent = "JSON không hợp lệ: " + e.message; return; }
+  if(typeof rec.content !== "string"){ errEl.textContent = 'Thiếu trường "content" (chuỗi).'; return; }
+  if(!Array.isArray(rec.spans)){ errEl.textContent = 'Thiếu trường "spans" (mảng).'; return; }
+  CUR = rec; render(rec);
+}
+
+function render(rec){
+  Object.keys(colorMap).forEach(k=>delete colorMap[k]);
+  const cps = Array.from(rec.content.normalize("NFC"));   // MẢNG CODE-POINT (khớp offset kiểu Python)
+  const spans = rec.spans.map((s,i)=>({ ...s, _i:i })).filter(s=>Number.isInteger(s.start)&&Number.isInteger(s.end)&&s.end>s.start);
+  const sorted = [...spans].sort((a,b)=> a.start - b.start || b.end - a.end);
+
+  // gán màu ổn định theo thứ tự xuất hiện
+  sorted.forEach(s=> colorFor(s.field));
+
+  // ---- render văn bản (bỏ qua span chồng lấn để không vỡ) ----
+  let html = "", pos = 0, warnOverlap = 0, warnRange = 0;
+  for(const s of sorted){
+    if(hidden.has(s.field)) continue;
+    if(s.start > cps.length){ warnRange++; continue; }
+    if(s.start < pos){ warnOverlap++; continue; }
+    html += esc(cps.slice(pos, s.start).join(""));
+    const seg = esc(cps.slice(s.start, s.end).join(""));
+    const c = colorFor(s.field);
+    html += `<span class="tok" data-i="${s._i}" style="background:${c}22;border-bottom-color:${c}"
+      title="${esc(s.field)} · ${esc(s.label||"")} · [${s.start},${s.end}]">${seg}</span>`;
+    pos = s.end;
+  }
+  html += esc(cps.slice(pos).join(""));
+  doc.innerHTML = html;
+
+  // ---- render danh sách ----
+  list.innerHTML = "";
+  for(const s of sorted){
+    const c = colorFor(s.field);
+    const li = document.createElement("li");
+    li.dataset.i = s._i;
+    li.style.borderLeftColor = c;
+    if(hidden.has(s.field)) li.style.opacity = ".4";
+    const txt = Array.from(rec.content.normalize("NFC")).slice(s.start, s.end).join("");
+    li.innerHTML =
+      `<div class="top"><span class="badge ${badgeCls(s.label)}">${esc(s.label||"?")}</span>`+
+      `<span class="fname" style="color:${c}">${esc(s.field)}</span>`+
+      `<span class="off">[${s.start},${s.end}]${s.via?" · "+esc(s.via):""}</span></div>`+
+      `<div class="txt">${esc(txt)}</div>`;
+    list.appendChild(li);
+  }
+
+  // ---- legend (bấm để ẩn/hiện field) ----
+  legend.innerHTML = "";
+  const counts = {};
+  spans.forEach(s=> counts[s.field] = (counts[s.field]||0)+1);
+  Object.keys(counts).sort().forEach(f=>{
+    const chip = document.createElement("span");
+    chip.className = "chip" + (hidden.has(f) ? " off" : "");
+    chip.innerHTML = `<span class="dot" style="background:${colorFor(f)}"></span>${esc(f)} <b>${counts[f]}</b>`;
+    chip.onclick = ()=>{ hidden.has(f) ? hidden.delete(f) : hidden.add(f); render(CUR); };
+    legend.appendChild(chip);
+  });
+
+  $("#cnt").textContent = spans.length + " span";
+  $("#docmeta").textContent = (rec.profile_id?rec.profile_id+" · ":"") + (rec.scenario||"") +
+    (warnOverlap?` · ⚠${warnOverlap} chồng lấn`:"") + (warnRange?` · ⚠${warnRange} vượt độ dài`:"");
+}
+
+// ---- tương tác: rê vào -> sáng đồng bộ + cuộn ----
+function setHi(i, on){
+  document.querySelectorAll(`.tok[data-i="${i}"], #list li[data-i="${i}"]`).forEach(el=>el.classList.toggle("hi", on));
+}
+function bindHover(container, isDoc){
+  container.addEventListener("mouseover", e=>{
+    const t = e.target.closest("[data-i]"); if(!t) return;
+    setHi(t.dataset.i, true);
+  });
+  container.addEventListener("mouseout", e=>{
+    const t = e.target.closest("[data-i]"); if(!t) return;
+    setHi(t.dataset.i, false);
+  });
+  container.addEventListener("click", e=>{
+    const t = e.target.closest("[data-i]"); if(!t) return;
+    // rê ở đâu thì cuộn tới bên KIA
+    const other = (isDoc ? list : doc).querySelector(`[data-i="${t.dataset.i}"]`);
+    const box = isDoc ? list : doc;
+    if(other) scrollWithin(box, other);
+  });
+}
+// rê ở danh sách -> cuộn văn bản tới span; rê ở văn bản -> cuộn danh sách tới mục
+list.addEventListener("mouseover", e=>{ const t=e.target.closest("li[data-i]"); if(t){ const m=doc.querySelector(`.tok[data-i="${t.dataset.i}"]`); if(m) scrollWithin(doc,m);} });
+doc.addEventListener("mouseover", e=>{ const t=e.target.closest(".tok[data-i]"); if(t){ const m=list.querySelector(`li[data-i="${t.dataset.i}"]`); if(m) scrollWithin(list,m);} });
+bindHover(doc, true); bindHover(list, false);
+
+// ---- nút ----
+$("#go").onclick = parse;
+$("#clr").onclick = ()=>{ $("#input").value=""; doc.innerHTML=""; list.innerHTML=""; legend.innerHTML=""; errEl.textContent=""; $("#cnt").textContent=""; $("#docmeta").textContent=""; };
+$("#ex").onclick = ()=>{ $("#input").value = document.getElementById("sample").textContent.trim(); parse(); };
+$("#input").addEventListener("keydown", e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="Enter") parse(); });
+
+// ---- Tải và duyệt dataset ----
+let datasetRecords = [];
+let currentRecordIndex = -1;
+
+const dsFile = $("#ds-file");
+const dsSelect = $("#ds-select");
+const dsStatus = $("#ds-status");
+const dsPrev = $("#ds-prev");
+const dsNext = $("#ds-next");
+const dsLoadDefault = $("#ds-load-default");
+
+function processDatasetText(text, sourceName) {
+  const lines = text.split('\n');
+  const tempRecords = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    try {
+      const rec = JSON.parse(line);
+      tempRecords.push(rec);
+    } catch(e) {
+      console.warn(`Lỗi parse JSON ở dòng ${i+1}:`, e);
+    }
+  }
+  
+  if (tempRecords.length === 0) {
+    dsStatus.textContent = `Không tìm thấy bản ghi hợp lệ trong ${sourceName}`;
+    return;
+  }
+  
+  datasetRecords = tempRecords;
+  dsStatus.textContent = `Đã tải ${datasetRecords.length} bản ghi`;
+  
+  // Xóa các option cũ
+  dsSelect.innerHTML = "";
+  datasetRecords.forEach((rec, idx) => {
+    const opt = document.createElement("option");
+    opt.value = idx;
+    const label = rec.scenario || rec.profile_id || `Bản ghi ${idx + 1}`;
+    const pId = rec.profile_id ? `[${rec.profile_id}] ` : "";
+    opt.textContent = `${idx + 1}. ${pId}${label}`;
+    dsSelect.appendChild(opt);
+  });
+  
+  dsSelect.disabled = false;
+  dsPrev.disabled = false;
+  dsNext.disabled = false;
+  
+  selectRecord(0);
+}
+
+function selectRecord(index) {
+  if (index < 0 || index >= datasetRecords.length) return;
+  currentRecordIndex = index;
+  dsSelect.value = index;
+  
+  const rec = datasetRecords[index];
+  $("#input").value = JSON.stringify(rec, null, 2);
+  parse();
+  
+  dsPrev.disabled = index === 0;
+  dsNext.disabled = index === datasetRecords.length - 1;
+}
+
+dsSelect.onchange = () => {
+  selectRecord(parseInt(dsSelect.value));
+};
+
+dsPrev.onclick = () => {
+  if (currentRecordIndex > 0) {
+    selectRecord(currentRecordIndex - 1);
+  }
+};
+
+dsNext.onclick = () => {
+  if (currentRecordIndex < datasetRecords.length - 1) {
+    selectRecord(currentRecordIndex + 1);
+  }
+};
+
+dsFile.onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    processDatasetText(evt.target.result, file.name);
+  };
+  reader.readAsText(file);
+};
+
+function fetchDefaultDataset() {
+  const preset = document.getElementById("ds-preset").value;
+  dsStatus.textContent = `Đang tải tự động ${preset}...`;
+  fetch(`../output/${preset}`)
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.text();
+    })
+    .then(text => {
+      processDatasetText(text, preset);
+    })
+    .catch(err => {
+      console.warn(`Không thể tự động tải ${preset}:`, err);
+      dsStatus.textContent = `Không tìm thấy hoặc không thể tự động tải ${preset} (CORS/404). Hãy chọn file thủ công.`;
+      // tải ví dụ lúc mở nếu không tải được dataset
+      $("#ex").click();
+    });
+}
+
+dsLoadDefault.onclick = fetchDefaultDataset;
+
+// Tự động tải khi mở trang
+fetchDefaultDataset();
+</script>
+</body>
+</html>
