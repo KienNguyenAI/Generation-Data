@@ -45,7 +45,7 @@ def build_outline_prompt(form_meta, fields_desc_str, register, sub_format_desc, 
 
     raw_text = form_meta.get("form_raw_text", "")
     if raw_text:
-        form_desc += f"\n- Nội dung/cấu trúc khung xương biểu mẫu gốc tham khảo:\n«««\n{raw_text[:1000]}\n»»»"
+        form_desc += f"\n- Nội dung/cấu trúc khung xương biểu mẫu gốc tham khảo:\n«««\n{raw_text[:500]}\n»»»"
 
     spi_constraint = ""
     if target_spi:
@@ -100,7 +100,7 @@ def build_draft_prompt(form_meta, fields_desc_str, banned_fields_desc_str, outli
 
     raw_text = form_meta.get("form_raw_text", "")
     if raw_text:
-        form_desc += f"\n- Nội dung/cấu trúc khung xương biểu mẫu gốc tham khảo:\n«««\n{raw_text[:1000]}\n»»»"
+        form_desc += f"\n- Nội dung/cấu trúc khung xương biểu mẫu gốc tham khảo:\n«««\n{raw_text[:500]}\n»»»"
 
     return f"""{persona} Hãy thực hiện viết bản nháp (Bước 3) cho văn bản/cuộc trò chuyện dưới định dạng: **{sub_format_desc}** với giọng điệu/văn phong: **{tone_desc}** dựa trên bối cảnh biểu mẫu và dàn ý dưới đây.
 

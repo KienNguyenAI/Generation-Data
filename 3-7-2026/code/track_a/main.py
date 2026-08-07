@@ -80,41 +80,33 @@ def generate_one(profile, form_meta, register=None, outline=None, tagged_fields=
     # 3. Choose or reuse outline
     selected_fields = []
     if not outline:
-        outline_prompt = build_outline_prompt(form_meta, outline_fields_desc_str, register, sub_format_desc, tone_desc, target_spi=target_spi)
-        try:
-            raw_outline = call_gemini(outline_prompt, temperature=0.5)
-            outline = clean_output(raw_outline)
-            
-            # Extract selected fields
-            match = re.search(r'(?:«|)?SELECTED_FIELDS:\s*(\[.*?\])(?:»|)?', raw_outline, re.IGNORECASE)
-            if match:
-                try:
-                    selected_fields = json.loads(match.group(1))
-                    selected_fields = [f.strip() for f in selected_fields if f.strip() in MECHANISM]
-                except Exception:
-                    selected_fields = []
-            
-            if not selected_fields:
-                # Fallback: scan outline text for field keys
-                for field in MECHANISM:
-                    if field in raw_outline:
-                        selected_fields.append(field)
-                if not selected_fields:
-                    selected_fields = ["full_name", "dob", "cccd", "address", "phone"]
-            
-            if target_spi and target_spi not in selected_fields:
-                selected_fields.append(target_spi)
-                
-            # Clean SELECTED_FIELDS block from the outline to keep outline clean
-            outline = re.sub(r'(?:«|)?SELECTED_FIELDS:\s*\[.*?\](?:»|)?', '', outline, flags=re.IGNORECASE).strip()
-        except Exception as e:
-            print(f"      (Lập dàn ý gặp lỗi: {e}. Sử dụng dàn ý mặc định...)")
-            outline = """1. Phần mở đầu: Tiêu ngữ, thông tin người làm đơn/các nhân vật.
+        # Bỏ qua gọi API lập dàn ý để tránh lỗi 529 và tiết kiệm thời gian (lập dàn ý tự động)
+        if register == "dialogue":
+            outline = """1. Phần mở đầu: Chào hỏi và bắt đầu cuộc đối thoại giữa các nhân vật.
+2. Phần nội dung: Trao đổi chi tiết hoàn cảnh có lồng ghép thông tin nhạy cảm liên quan đến thủ tục.
+3. Phần kết: Kết thúc cuộc đối thoại hành chính."""
+        elif register == "third_person":
+            outline = """1. Phần mở đầu: Ghi nhận sự việc từ góc nhìn thứ ba, giới thiệu các nhân vật.
+2. Phần nội dung: Tường thuật chi tiết hoàn cảnh có lồng ghép thông tin nhạy cảm liên quan đến thủ tục.
+3. Phần kết: Ký tên/ghi rõ chức danh người lập báo cáo."""
+        else:
+            outline = """1. Phần mở đầu: Tiêu ngữ, thông tin cá nhân người làm đơn.
 2. Phần nội dung: Trình bày chi tiết hoàn cảnh có lồng ghép thông tin nhạy cảm liên quan đến thủ tục.
-3. Phần kết: Ký tên/ghi rõ họ tên."""
-            selected_fields = ["full_name", "dob", "cccd", "address", "phone"]
-            if target_spi and target_spi not in selected_fields:
-                selected_fields.append(target_spi)
+3. Phần kết: Đề xuất kiến nghị và ký tên."""
+        
+        # Chọn các trường dữ liệu ngẫu nhiên (gồm core fields và target_spi)
+        selected_fields = ["full_name", "dob", "cccd", "address", "phone"]
+        if target_spi and target_spi not in selected_fields:
+            selected_fields.append(target_spi)
+            
+        # Lấy thêm tối đa 1-2 trường phụ khác sẵn có trong profile và không bị trùng
+        available_fields = [f for f in MECHANISM if f not in ("family_name", "middle_name", "given_name") and fl.get(f) is not None and str(fl.get(f)).strip() != ""]
+        other_candidates = [f for f in available_fields if f not in selected_fields]
+        if other_candidates:
+            extra_count = random.randint(0, 1)
+            if extra_count > 0:
+                extra_fields = random.sample(other_candidates, min(extra_count, len(other_candidates)))
+                selected_fields.extend(extra_fields)
     else:
         # If outline is reused, extract selected_fields from outline if tagged_fields is None
         if tagged_fields is not None:
@@ -162,48 +154,81 @@ def generate_one(profile, form_meta, register=None, outline=None, tagged_fields=
         raw_draft = call_gemini(draft_prompt, temperature=temp_draft)
         draft = clean_output(raw_draft)
         
-        revision_prompt = build_revision_prompt(filtered_fields_desc_str, banned_fields_desc_str, draft, register)
-        raw_revised = call_gemini(revision_prompt, temperature=0.2)
-        tagged = clean_output(raw_revised)
-        
-        # We dynamically discover or reuse which fields the LLM actually chose to tag
-        allowed_fields = set(selected_fields)
-        # Always allow core PII fields to be tagged if the LLM chose to write them
-        allowed_fields.update(["full_name", "dob", "cccd", "address", "phone", "email"])
-        if "family_relations" in selected_fields:
-            allowed_fields.update(["address", "dob", "cccd", "phone", "email"])
-
-        if tagged_fields is None:
-            attempt_tagged_fields = set(re.findall(r"⟦([a-zA-Z0-9_]+)⟧", tagged))
-            attempt_tagged_fields = attempt_tagged_fields.intersection(allowed_fields)
-        else:
-            attempt_tagged_fields = set(tagged_fields)
-            allowed_fields.update(attempt_tagged_fields)
-        
-        # Build manifest containing ONLY these used fields
-        manifest = build_manifest_for_used_fields(profile, attempt_tagged_fields)
-        
-        # Choose a random surface variant for matching validation
-        for e in manifest:
-            if e.get("surfaces"):
-                e["prompt_surface"] = random.choice(e["surfaces"])
+        # Chiến lược hiệu đính có điều kiện (Conditional Revision):
+        # Kiểm tra xem bản nháp (draft) đã có dán nhãn hợp lệ chưa. Nếu hợp lệ thì bỏ qua bước gọi API hiệu đính.
+        for candidate_text, is_revised in [(draft, False), (None, True)]:
+            if is_revised:
+                print("      (Bản nháp chưa chuẩn nhãn, đang gọi API hiệu đính...)")
+                revision_prompt = build_revision_prompt(filtered_fields_desc_str, banned_fields_desc_str, draft, register)
+                raw_revised = call_gemini(revision_prompt, temperature=0.2)
+                tagged = clean_output(raw_revised)
             else:
-                e["prompt_surface"] = ""
+                tagged = candidate_text
+            
+            # We dynamically discover or reuse which fields the LLM actually chose to tag
+            allowed_fields = set(selected_fields)
+            # Always allow core PII fields to be tagged if the LLM chose to write them
+            allowed_fields.update(["full_name", "dob", "cccd", "address", "phone", "email"])
+            if "family_relations" in selected_fields:
+                allowed_fields.update(["address", "dob", "cccd", "phone", "email"])
+
+            if tagged_fields is None:
+                attempt_tagged_fields = set(re.findall(r"⟦([a-zA-Z0-9_]+)⟧", tagged))
+                attempt_tagged_fields = attempt_tagged_fields.intersection(allowed_fields)
                 
-        ext = extract_anchor_tags(tagged, [e["field"] for e in manifest if e.get("anchor")])
+                # Bắt buộc các trường critical hoặc SPI được chọn nếu xuất hiện trong văn bản thì phải được dán nhãn
+                required_to_tag = {f for f in selected_fields if (f in CRITICAL or SENS.get(f) == "SPI") and fl.get(f) is not None and str(fl.get(f)).strip() != ""}
+                
+                clean_text_draft = re.sub(r"⟦/?.*?⟧", "", tagged)
+                leaked = False
+                for f in required_to_tag:
+                    if f not in attempt_tagged_fields:
+                        f_manifest = build_manifest_for_used_fields(profile, {f})
+                        if f_manifest:
+                            surfaces = f_manifest[0].get("surfaces", [])
+                            if any(s.strip() and s.strip() in clean_text_draft for s in surfaces):
+                                leaked = True
+                                break
+                                
+                if leaked:
+                    ext_ok_override = False
+                else:
+                    ext_ok_override = True
+            else:
+                attempt_tagged_fields = set(tagged_fields)
+                allowed_fields.update(attempt_tagged_fields)
+                ext_ok_override = True
+            
+            # Build manifest containing ONLY these used fields
+            manifest = build_manifest_for_used_fields(profile, attempt_tagged_fields)
+            
+            # Choose a random surface variant for matching validation
+            for e in manifest:
+                if e.get("surfaces"):
+                    e["prompt_surface"] = random.choice(e["surfaces"])
+                else:
+                    e["prompt_surface"] = ""
+                    
+            ext = extract_anchor_tags(tagged, [e["field"] for e in manifest if e.get("anchor")])
+            if not ext_ok_override:
+                ext["ok"] = False
+            
+            # Restrict spans to only allowed_fields
+            ext["spans"] = [s for s in ext["spans"] if s["field"] in allowed_fields]
+            
+            clean = ext["clean_text"]
+            
+            # Coverage check (strictly on the dynamically constructed manifest)
+            miss = coverage(clean, manifest)
+            important = [f for f in miss if (f in CRITICAL or SENS.get(f) == "SPI") and f in selected_fields]
+            last = (manifest, clean, ext, miss, attempt_tagged_fields)
+            
+            # Nếu thẻ hợp lệ và không thiếu trường quan trọng, bỏ qua bước tiếp theo
+            if ext["ok"] and not important:
+                break
         
-        # Restrict spans to only allowed_fields
-        ext["spans"] = [s for s in ext["spans"] if s["field"] in allowed_fields]
-        
-        clean = ext["clean_text"]
-        
-        # Coverage check (strictly on the dynamically constructed manifest)
-        miss = coverage(clean, manifest)
-        important = [f for f in miss if (f in CRITICAL or SENS.get(f) == "SPI") and f in selected_fields]
-        last = (manifest, clean, ext, miss, attempt_tagged_fields)
-        
-        # If the tags are parsed successfully and no critical/SPI fields used by the LLM are missing
-        if ext["ok"] and not important:
+        # Nếu đạt chuẩn ở bất kỳ bước nào trong vòng lặp candidate, thoát khỏi vòng lặp retry
+        if last[2]["ok"] and not [f for f in last[3] if (f in CRITICAL or SENS.get(f) == "SPI") and f in selected_fields]:
             break
         
     manifest, clean, ext, miss, final_tagged_fields = last
@@ -238,6 +263,9 @@ def run_batch(n=10):
     # Initialize form metadata cache
     load_all_form_metadata()
     valid_forms = [item for item in get_all_form_metadata().values() if item.get("form_raw_text") and item.get("record_type")]
+    valid_forms = sorted(valid_forms, key=lambda x: x.get("template_id", ""))
+    # Xáo trộn ngẫu nhiên biểu mẫu một cách xác định
+    random.Random(42).shuffle(valid_forms)
     
     if not valid_forms:
         print("Không tìm thấy biểu mẫu hợp lệ nào trong form.json!")
@@ -245,39 +273,135 @@ def run_batch(n=10):
         
     print(f"Tìm thấy {len(valid_forms)} biểu mẫu chứa văn bản mẫu trong form.json")
     
-    pool = load_profiles(3000)
-    # Trộn ngẫu nhiên hồ sơ người lớn (18-85 tuổi)
+    # Nạp toàn bộ ngân hàng hồ sơ
+    pool = load_profiles(30000)
+    profile_lookup = {p["profile_id"]: p for p in pool}
+    form_lookup = {f["template_id"]: f for f in valid_forms}
+    
+    # Lọc hồ sơ người lớn (18-85 tuổi) và sắp xếp tăng dần theo ID để đảm bảo thứ tự cố định
     adult_pool = [p for p in pool if (_age(pfields(p)) or 0) >= 18 and (_age(pfields(p)) or 999) <= 85]
-    random.shuffle(adult_pool)
+    adult_pool = sorted(adult_pool, key=lambda x: x.get("profile_id", ""))
+    # Xáo trộn ngẫu nhiên hồ sơ một cách xác định
+    random.Random(100).shuffle(adult_pool)
     
-    if len(adult_pool) < n:
-        print(f"Chỉ tìm thấy {len(adult_pool)} hồ sơ ≥18 tuổi trong pool, cần {n}.")
-        sys.exit(1)
-        
-    print(f"Model: {MODEL} | sinh {n} dòng dữ liệu theo biểu mẫu ngẫu nhiên (Lựa chọn trường linh hoạt)\n")
+    offset = int(os.environ.get("SECUREPI_OFFSET", "0"))
+    total_needed = offset + n
     
-    lines, summary = [], []
-    for i in range(n):
-        profile = adult_pool[i % len(adult_pool)]
-        form_meta = random.choice(valid_forms)
-        pid = profile.get("profile_id")
-        
-        # Determine target SPI based on domain mapping
-        dom = form_meta.get("domain", "economy_tech_other")
-        target_candidates = DOMAIN_SPI_MAP.get(dom, [])
-        fl = pfields(profile)
-        available_target_spis = [f for f in target_candidates if fl.get(f) and str(fl.get(f)).strip()]
-        
-        if not available_target_spis:
-            all_spis = [f for f in MECHANISM if SENS.get(f) == "SPI"]
-            available_target_spis = [f for f in all_spis if fl.get(f) and str(fl.get(f)).strip()]
+    # Xác định chỉ số bắt đầu của hồ sơ cá nhân
+    prof_offset = os.environ.get("SECUREPI_PROF_OFFSET")
+    if prof_offset is not None:
+        prof_start_idx = int(prof_offset)
+    else:
+        # Tự động phân chia dải hồ sơ dựa trên mô hình chạy để tránh trùng lặp
+        if "kr/glm-5" in MODEL:
+            prof_start_idx = 8263  # Model B (GLM-5) dùng dải hồ sơ thứ 2
+        else:
+            prof_start_idx = 0     # Model A (DeepSeek) hoặc mặc định dùng dải hồ sơ thứ 1
             
-        target_spi = random.choice(available_target_spis) if available_target_spis else None
+    print(f"Phân hoạch hồ sơ: Bắt đầu từ chỉ mục {prof_start_idx} trong ngân hàng {len(adult_pool)} hồ sơ người lớn.")
+    
+    out_name = os.environ.get("SECUREPI_OUT_NAME", "dataset.jsonl")
+    ds = OUT / out_name
+    
+    # Định nghĩa file kế hoạch phát sinh (plan file)
+    plan_override = os.environ.get("SECUREPI_PLAN_PATH")
+    if plan_override:
+        plan_path = Path(plan_override)
+        if not plan_path.is_absolute():
+            plan_path = OUT / plan_override
+    else:
+        plan_name = out_name.rsplit(".", 1)[0] + "_plan.json"
+        plan_path = OUT / plan_name
+    
+    # Khởi tạo file trống ban đầu nếu là kế hoạch hoàn toàn mới và chạy từ offset 0
+    if not plan_path.exists() and offset == 0:
+        ds.write_text("", encoding="utf-8")
         
-        print(f"[{i+1}/{n}] {pid} | Biểu mẫu: {form_meta['record_type'][:30]} | SPI: {target_spi or 'None'}", end="", flush=True)
+    plan = []
+    if plan_path.exists():
+        print(f"Phát hiện file kế hoạch cũ tại {plan_path}, đang tải...")
+        try:
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            print(f"Không thể đọc file kế hoạch cũ: {e}")
+            
+    # Nếu chưa có kế hoạch hoặc kế hoạch hiện tại ít dòng hơn số lượng yêu cầu total_needed, ta tạo/mở rộng kế hoạch
+    if len(plan) < total_needed:
+        print(f"Đang lập kế hoạch sinh mới/mở rộng cho {total_needed} dòng...")
+        
+        while len(plan) < total_needed:
+            idx = len(plan)
+            # Chọn biểu mẫu và hồ sơ hoàn toàn tuần tự/xác định
+            form_meta = valid_forms[idx % len(valid_forms)]
+            profile = adult_pool[(prof_start_idx + idx) % len(adult_pool)]
+            pid = profile.get("profile_id")
+            
+            # Xác định trường SPI nhạy cảm mục tiêu một cách xác định
+            dom = form_meta.get("domain", "economy_tech_other")
+            target_candidates = DOMAIN_SPI_MAP.get(dom, [])
+            fl = pfields(profile)
+            available_target_spis = [f for f in target_candidates if fl.get(f) and str(fl.get(f)).strip()]
+            if not available_target_spis:
+                all_spis = [f for f in MECHANISM if SENS.get(f) == "SPI"]
+                available_target_spis = [f for f in all_spis if fl.get(f) and str(fl.get(f)).strip()]
+            
+            target_spi = available_target_spis[idx % len(available_target_spis)] if available_target_spis else None
+            
+            plan.append({
+                "index": idx,
+                "profile_id": pid,
+                "template_id": form_meta["template_id"],
+                "target_spi": target_spi
+            })
+            
+        plan_path.write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"Đã lưu kế hoạch sinh tại: {plan_path}")
+        
+    # Đọc danh sách các bản ghi đã được sinh thành công trước đó trong dataset
+    generated_keys = set()
+    if ds.exists():
+        try:
+            with open(ds, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        rec = json.loads(line)
+                        generated_keys.add((rec.get("profile_id"), rec.get("template_id")))
+        except Exception as e:
+            print(f"Lỗi khi đọc tệp tin dataset cũ: {e}")
+            
+    print(f"Bắt đầu xử lý dải dòng từ chỉ mục {offset} đến {total_needed - 1}...")
+    print(f"Đã sinh trong dataset: {len(generated_keys)} dòng.")
+    print(f"Model: {MODEL} | sinh dữ liệu theo kế hoạch thực tế\n")
+    
+    summary = []
+    for i in range(offset, total_needed):
+        item = plan[i]
+        pid = item["profile_id"]
+        tid = item["template_id"]
+        target_spi = item["target_spi"]
+        
+        # Kiểm tra xem dòng này đã sinh chưa
+        if (pid, tid) in generated_keys:
+            summary.append((pid, "Đã có", "-", "SKIPPED", ""))
+            continue
+            
+        profile = profile_lookup.get(pid)
+        form_meta = form_lookup.get(tid)
+        
+        if not profile or not form_meta:
+            print(f"[{i+1}/{total_needed}] LỖI: Không tìm thấy profile {pid} hoặc form {tid} trong hệ thống!")
+            summary.append((pid, "Lỗi lookup", "-", "ERR", "Missing metadata"))
+            continue
+            
+        print(f"[{i+1}/{total_needed}] {pid} | Biểu mẫu: {form_meta['record_type'][:30]} | SPI: {target_spi or 'None'}", end="", flush=True)
         try:
             rec = generate_one(profile, form_meta, target_spi=target_spi)
-            lines.append(json.dumps(rec, ensure_ascii=False))
+            rec_json = json.dumps(rec, ensure_ascii=False)
+            
+            # Ghi trực tiếp dòng này vào file (Real-time checkpoint)
+            with open(ds, "a", encoding="utf-8") as f:
+                f.write(rec_json + "\n")
+                
             m = rec["meta"]
             summary.append((pid, form_meta["record_type"][:30], m["n_spans"], m["tag_ok"], m["missing_coverage"]))
             print(f" -> OK ({m['n_spans']} nhãn)")
@@ -285,11 +409,9 @@ def run_batch(n=10):
             print(f" -> LỖI: {e}")
             summary.append((pid, form_meta["record_type"][:30], "-", "ERR", str(e)[:50]))
             
-    ds = OUT / os.environ.get("SECUREPI_OUT_NAME", "dataset.jsonl")
-    ds.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
     print("\n" + "=" * 60)
-    ok_cnt = sum(1 for s in summary if s[3] is True)
-    print(f"Hoàn thành sinh dữ liệu! Thành công: {ok_cnt}/{n} dòng.")
+    ok_cnt = sum(1 for s in summary if s[3] is True or s[3] == "SKIPPED")
+    print(f"Hoàn thành tiến trình! Thành công: {ok_cnt}/{n} dòng thuộc dải yêu cầu (bao gồm các dòng đã sinh trước đó).")
     print(f"Kết quả được lưu tại: {ds}")
     print("=" * 60)
 

@@ -19,8 +19,29 @@ def main():
     parser.add_argument("--num", type=int, default=2, help="Number of records to generate (default: 2)")
     parser.add_argument("--patch", type=str, help="Profile ID to patch/regenerate (only applies to Track A/form-driven)")
     parser.add_argument("--mode", choices=["default", "register"], default="default", help="Batch mode for Track B (default or register)")
+    parser.add_argument("--output", "-o", type=str, help="Custom output dataset filename (e.g., custom_dataset.jsonl)")
+    parser.add_argument("--offset", type=int, default=0, help="Start offset index for generation (default: 0)")
+    parser.add_argument("--profile-offset", type=int, help="Deterministic starting index offset in the adult profile bank (defaults to 0 for deepseek-3.2, 8263 for glm-5)")
+    parser.add_argument("--plan", type=str, help="Path or filename of an existing plan JSON to reuse")
+    parser.add_argument("--direct", action="store_true", help="Bypass 9Router and call OpenRouter/third-party API directly using the DEEPSEEKV4FLASH key in .env")
 
     args = parser.parse_args()
+
+    if args.output:
+        import os
+        os.environ["SECUREPI_OUT_NAME"] = args.output
+    if args.offset is not None:
+        import os
+        os.environ["SECUREPI_OFFSET"] = str(args.offset)
+    if args.profile_offset is not None:
+        import os
+        os.environ["SECUREPI_PROF_OFFSET"] = str(args.profile_offset)
+    if args.plan:
+        import os
+        os.environ["SECUREPI_PLAN_PATH"] = args.plan
+    if args.direct:
+        import os
+        os.environ["SECUREPI_DIRECT_OPENROUTER"] = "1"
 
     if args.track == "A":
         import track_a.main as track_a
