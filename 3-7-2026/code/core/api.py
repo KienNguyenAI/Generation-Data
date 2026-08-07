@@ -75,7 +75,13 @@ def call_gemini(prompt, temperature=0.85):
         err_msg = j.get("error", {}).get("message", "Unknown error") if j else "Empty response"
         raise RuntimeError(f"API Error: {err_msg}")
         
-    return j["choices"][0]["message"]["content"].strip()
+    choice = j["choices"][0]
+    content = choice.get("message", {}).get("content")
+    if content is None:
+        finish_reason = choice.get("finish_reason", "unknown")
+        raise RuntimeError(f"API returned empty content. Finish reason: {finish_reason}. Response: {json.dumps(j, ensure_ascii=False)}")
+        
+    return content.strip()
 
 def clean_output(t):
     t = re.sub(r"```[a-zA-Z]*\n?", "", t)
