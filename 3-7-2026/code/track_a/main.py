@@ -293,10 +293,12 @@ def run_batch(n=10):
         prof_start_idx = int(prof_offset)
     else:
         # Tự động phân chia dải hồ sơ dựa trên mô hình chạy để tránh trùng lặp
-        if "kr/glm-5" in MODEL:
+        if "glm-5" in MODEL or "kr/glm-5" in MODEL:
             prof_start_idx = 8263  # Model B (GLM-5) dùng dải hồ sơ thứ 2
+        elif "deepseek-v4" in MODEL or "v4-flash" in MODEL:
+            prof_start_idx = 16526 # Model C (DeepSeek V4) dùng dải hồ sơ thứ 3
         else:
-            prof_start_idx = 0     # Model A (DeepSeek) hoặc mặc định dùng dải hồ sơ thứ 1
+            prof_start_idx = 0     # Model A (DeepSeek V3) hoặc mặc định dùng dải hồ sơ thứ 1
             
     print(f"Phân hoạch hồ sơ: Bắt đầu từ chỉ mục {prof_start_idx} trong ngân hàng {len(adult_pool)} hồ sơ người lớn.")
     
@@ -369,12 +371,13 @@ def run_batch(n=10):
         except Exception as e:
             print(f"Lỗi khi đọc tệp tin dataset cũ: {e}")
             
-    print(f"Bắt đầu xử lý dải dòng từ chỉ mục {offset} đến {total_needed - 1}...")
-    print(f"Đã sinh trong dataset: {len(generated_keys)} dòng.")
-    print(f"Model: {MODEL} | sinh dữ liệu theo kế hoạch thực tế\n")
-    
-    summary = []
-    for i in range(offset, total_needed):
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    write_lock = threading.Lock()
+    workers = int(os.environ.get("SECUREPI_WORKERS", "1"))
+
+    def process_item(i):
         item = plan[i]
         pid = item["profile_id"]
         tid = item["template_id"]
@@ -382,32 +385,54 @@ def run_batch(n=10):
         
         # Kiểm tra xem dòng này đã sinh chưa
         if (pid, tid) in generated_keys:
-            summary.append((pid, "Đã có", "-", "SKIPPED", ""))
-            continue
+            return (pid, "Đã có", "-", "SKIPPED", "")
             
         profile = profile_lookup.get(pid)
         form_meta = form_lookup.get(tid)
         
         if not profile or not form_meta:
             print(f"[{i+1}/{total_needed}] LỖI: Không tìm thấy profile {pid} hoặc form {tid} trong hệ thống!")
-            summary.append((pid, "Lỗi lookup", "-", "ERR", "Missing metadata"))
-            continue
+            return (pid, "Lỗi lookup", "-", "ERR", "Missing metadata")
             
-        print(f"[{i+1}/{total_needed}] {pid} | Biểu mẫu: {form_meta['record_type'][:30]} | SPI: {target_spi or 'None'}", end="", flush=True)
+        print_prefix = f"[{i+1}/{total_needed}] {pid} | Biểu mẫu: {form_meta['record_type'][:30]} | SPI: {target_spi or 'None'}"
         try:
             rec = generate_one(profile, form_meta, target_spi=target_spi)
             rec_json = json.dumps(rec, ensure_ascii=False)
             
-            # Ghi trực tiếp dòng này vào file (Real-time checkpoint)
-            with open(ds, "a", encoding="utf-8") as f:
-                f.write(rec_json + "\n")
-                
+            # Ghi trực tiếp dòng này vào file dưới sự bảo vệ của write_lock
+            with write_lock:
+                with open(ds, "a", encoding="utf-8") as f:
+                    f.write(rec_json + "\n")
+                    
             m = rec["meta"]
-            summary.append((pid, form_meta["record_type"][:30], m["n_spans"], m["tag_ok"], m["missing_coverage"]))
-            print(f" -> OK ({m['n_spans']} nhãn)")
+            print(f"{print_prefix} -> OK ({m['n_spans']} nhãn)")
+            return (pid, form_meta["record_type"][:30], m["n_spans"], m["tag_ok"], m["missing_coverage"])
         except Exception as e:
-            print(f" -> LỖI: {e}")
-            summary.append((pid, form_meta["record_type"][:30], "-", "ERR", str(e)[:50]))
+            print(f"{print_prefix} -> LỖI: {e}")
+            return (pid, form_meta["record_type"][:30], "-", "ERR", str(e)[:50])
+
+    # Lọc ra danh sách các chỉ mục cần sinh thực tế
+    indices_to_process = []
+    summary = []
+    for i in range(offset, total_needed):
+        item = plan[i]
+        pid = item["profile_id"]
+        tid = item["template_id"]
+        if (pid, tid) in generated_keys:
+            summary.append((pid, "Đã có", "-", "SKIPPED", ""))
+        else:
+            indices_to_process.append(i)
+
+    print(f"Bắt đầu xử lý dải dòng từ chỉ mục {offset} đến {total_needed - 1}...")
+    print(f"Đã sinh trong dataset: {len(generated_keys)} dòng.")
+    print(f"Số dòng cần sinh mới thực tế: {len(indices_to_process)} dòng.")
+    print(f"Model: {MODEL} | sinh dữ liệu theo kế hoạch với {workers} luồng\n")
+    
+    if indices_to_process:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            results = executor.map(process_item, indices_to_process)
+            for res in results:
+                summary.append(res)
             
     print("\n" + "=" * 60)
     ok_cnt = sum(1 for s in summary if s[3] is True or s[3] == "SKIPPED")

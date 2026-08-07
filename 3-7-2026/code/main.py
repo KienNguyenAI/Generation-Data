@@ -21,9 +21,10 @@ def main():
     parser.add_argument("--mode", choices=["default", "register"], default="default", help="Batch mode for Track B (default or register)")
     parser.add_argument("--output", "-o", type=str, help="Custom output dataset filename (e.g., custom_dataset.jsonl)")
     parser.add_argument("--offset", type=int, default=0, help="Start offset index for generation (default: 0)")
-    parser.add_argument("--profile-offset", type=int, help="Deterministic starting index offset in the adult profile bank (defaults to 0 for deepseek-3.2, 8263 for glm-5)")
+    parser.add_argument("--profile-offset", type=int, help="Deterministic starting index offset in the adult profile bank (defaults to 0 for deepseek-3.2, 8263 for glm-5, 16526 for deepseek-v4-flash)")
     parser.add_argument("--plan", type=str, help="Path or filename of an existing plan JSON to reuse")
     parser.add_argument("--direct", action="store_true", help="Bypass 9Router and call OpenRouter/third-party API directly using the DEEPSEEKV4FLASH key in .env")
+    parser.add_argument("--workers", type=int, default=1, help="Number of parallel workers (threads) for generation (default: 1)")
 
     args = parser.parse_args()
 
@@ -42,6 +43,9 @@ def main():
     if args.direct:
         import os
         os.environ["SECUREPI_DIRECT_OPENROUTER"] = "1"
+    if args.workers is not None:
+        import os
+        os.environ["SECUREPI_WORKERS"] = str(args.workers)
 
     if args.track == "A":
         import track_a.main as track_a
