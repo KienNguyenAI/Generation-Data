@@ -48,6 +48,13 @@ def call_gemini(prompt, temperature=0.85):
         try:
             with urllib.request.urlopen(req, timeout=api_timeout) as resp:
                 j = json.loads(resp.read().decode("utf-8"))
+            if j and "choices" in j and len(j["choices"]) > 0:
+                choice = j["choices"][0]
+                content = choice.get("message", {}).get("content")
+                finish_reason = choice.get("finish_reason")
+                if content is None or finish_reason == "length":
+                    reason = finish_reason or "unknown"
+                    raise ValueError(f"API empty/truncated (finish_reason: {reason})")
             break
         except Exception as e:
             is_retryable = False
@@ -60,6 +67,9 @@ def call_gemini(prompt, temperature=0.85):
                     is_retryable = True
             elif isinstance(e, (urllib.error.URLError, TimeoutError, ConnectionError)) or "timed out" in str(e).lower():
                 err_msg = f"Timeout/Lỗi kết nối: {str(e)[:150]}"
+                is_retryable = True
+            elif isinstance(e, ValueError) and "API empty/truncated" in str(e):
+                err_msg = str(e)[:150]
                 is_retryable = True
             else:
                 err_msg = f"Lỗi khác: {str(e)[:150]}"

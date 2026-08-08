@@ -40,6 +40,136 @@ DOMAIN_SPI_MAP = {
     "economy_tech_other": ["bank_account", "eid_credentials", "location_data"]
 }
 
+def sanitize_tags(text):
+    if not text:
+        return text
+    # Dọn dẹp khoảng trắng thừa bên trong thẻ ⟦ và ⟧
+    text = re.sub(r'⟦\s+', '⟦', text)
+    text = re.sub(r'\s+⟧', '⟧', text)
+    text = re.sub(r'⟦/\s+', '⟦/', text)
+    
+    # Sửa lỗi quên gạch chéo thẻ đóng: ⟦field⟧giá trị⟦field⟧ -> ⟦field⟧giá trị⟦/field⟧
+    fields = set(re.findall(r'⟦([a-zA-Z0-9_]+)⟧', text))
+    for f in fields:
+        pattern = r'⟦' + re.escape(f) + r'⟧(.*?)(⟦' + re.escape(f) + r'⟧|⟦/' + re.escape(f) + r'⟧)'
+        def repl(match):
+            content, next_tag = match.groups()
+            if next_tag == f'⟦{f}⟧':
+                return f'⟦{f}⟧{content}⟦/{f}⟧'
+            return match.group(0)
+        for _ in range(3):
+            text, count = re.subn(pattern, repl, text)
+            if count == 0:
+                break
+    return text
+
+def auto_tag_manifest_fields(tagged_text, manifest):
+    if not tagged_text or not manifest:
+        return tagged_text
+        
+    all_surfaces = []
+    for e in manifest:
+        fld = e["field"]
+        for s in e.get("surfaces", []):
+            if s.strip() and len(s.strip()) > 1:
+                all_surfaces.append((s.strip(), fld))
+                
+    # Sắp xếp theo độ dài giảm dần để khớp các chuỗi dài trước (tránh khớp nửa tên)
+    all_surfaces.sort(key=lambda x: -len(x[0]))
+    
+    for surface, fld in all_surfaces:
+        parts = re.split(r'(⟦/?.*?⟧)', tagged_text)
+        stack = []
+        changed = False
+        for i in range(len(parts)):
+            part = parts[i]
+            if part.startswith('⟦') and part.endswith('⟧'):
+                tag_content = part[1:-1]
+                if tag_content.startswith('/'):
+                    tag_name = tag_content[1:]
+                    if stack and stack[-1] == tag_name:
+                        stack.pop()
+                else:
+                    stack.append(tag_content)
+            else:
+                # Chỉ thay thế nếu nằm ngoài toàn bộ thẻ (stack rỗng)
+                if not stack and surface in part:
+                    # Tránh khớp từ con bên trong một từ tiếng Việt lớn hơn
+                    pattern = r'(?<![a-zA-Z0-9_À-ỹ])' + re.escape(surface) + r'(?![a-zA-Z0-9_À-ỹ])'
+                    new_part, count = re.subn(pattern, f"⟦{fld}⟧{surface}⟦/{fld}⟧", part)
+                    if count > 0:
+                        parts[i] = new_part
+                        changed = True
+        if changed:
+            tagged_text = "".join(parts)
+            
+    return tagged_text
+
+def sanitize_tags(text):
+    if not text:
+        return text
+    # Dọn dẹp khoảng trắng thừa bên trong thẻ ⟦ và ⟧
+    text = re.sub(r'⟦\s+', '⟦', text)
+    text = re.sub(r'\s+⟧', '⟧', text)
+    text = re.sub(r'⟦/\s+', '⟦/', text)
+    
+    # Sửa lỗi quên gạch chéo thẻ đóng: ⟦field⟧giá trị⟦field⟧ -> ⟦field⟧giá trị⟦/field⟧
+    fields = set(re.findall(r'⟦([a-zA-Z0-9_]+)⟧', text))
+    for f in fields:
+        pattern = r'⟦' + re.escape(f) + r'⟧(.*?)(⟦' + re.escape(f) + r'⟧|⟦/' + re.escape(f) + r'⟧)'
+        def repl(match):
+            content, next_tag = match.groups()
+            if next_tag == f'⟦{f}⟧':
+                return f'⟦{f}⟧{content}⟦/{f}⟧'
+            return match.group(0)
+        for _ in range(3):
+            text, count = re.subn(pattern, repl, text)
+            if count == 0:
+                break
+    return text
+
+def auto_tag_manifest_fields(tagged_text, manifest):
+    if not tagged_text or not manifest:
+        return tagged_text
+        
+    all_surfaces = []
+    for e in manifest:
+        fld = e["field"]
+        for s in e.get("surfaces", []):
+            if s.strip() and len(s.strip()) > 1:
+                all_surfaces.append((s.strip(), fld))
+                
+    # Sắp xếp theo độ dài giảm dần để khớp các chuỗi dài trước (tránh khớp nửa tên)
+    all_surfaces.sort(key=lambda x: -len(x[0]))
+    
+    for surface, fld in all_surfaces:
+        parts = re.split(r'(⟦/?.*?⟧)', tagged_text)
+        stack = []
+        changed = False
+        for i in range(len(parts)):
+            part = parts[i]
+            if part.startswith('⟦') and part.endswith('⟧'):
+                tag_content = part[1:-1]
+                if tag_content.startswith('/'):
+                    tag_name = tag_content[1:]
+                    if stack and stack[-1] == tag_name:
+                        stack.pop()
+                else:
+                    stack.append(tag_content)
+            else:
+                # Chỉ thay thế nếu nằm ngoài toàn bộ thẻ (stack rỗng)
+                if not stack and surface in part:
+                    # Tránh khớp từ con bên trong một từ tiếng Việt lớn hơn
+                    pattern = r'(?<![a-zA-Z0-9_À-ỹ])' + re.escape(surface) + r'(?![a-zA-Z0-9_À-ỹ])'
+                    new_part, count = re.subn(pattern, f"⟦{fld}⟧{surface}⟦/{fld}⟧", part)
+                    if count > 0:
+                        parts[i] = new_part
+                        changed = True
+        if changed:
+            tagged_text = "".join(parts)
+            
+    return tagged_text
+
 def generate_one(profile, form_meta, register=None, outline=None, tagged_fields=None, target_spi=None):
     fl = pfields(profile)
     
@@ -153,6 +283,7 @@ def generate_one(profile, form_meta, register=None, outline=None, tagged_fields=
         draft_prompt = build_draft_prompt(form_meta, filtered_fields_desc_str, banned_fields_desc_str, outline, register, sub_format_desc, tone_desc)
         raw_draft = call_gemini(draft_prompt, temperature=temp_draft)
         draft = clean_output(raw_draft)
+        draft = sanitize_tags(draft)
         
         # Chiến lược hiệu đính có điều kiện (Conditional Revision):
         # Kiểm tra xem bản nháp (draft) đã có dán nhãn hợp lệ chưa. Nếu hợp lệ thì bỏ qua bước gọi API hiệu đính.
@@ -165,12 +296,19 @@ def generate_one(profile, form_meta, register=None, outline=None, tagged_fields=
             else:
                 tagged = candidate_text
             
+            # Sửa các lỗi định dạng thẻ đóng mở (nếu có)
+            tagged = sanitize_tags(tagged)
+            
             # We dynamically discover or reuse which fields the LLM actually chose to tag
             allowed_fields = set(selected_fields)
             # Always allow core PII fields to be tagged if the LLM chose to write them
             allowed_fields.update(["full_name", "dob", "cccd", "address", "phone", "email"])
             if "family_relations" in selected_fields:
                 allowed_fields.update(["address", "dob", "cccd", "phone", "email"])
+
+            # Tự động bọc nhãn cho các thực thể rò rỉ
+            full_manifest = build_manifest_for_used_fields(profile, allowed_fields)
+            tagged = auto_tag_manifest_fields(tagged, full_manifest)
 
             if tagged_fields is None:
                 attempt_tagged_fields = set(re.findall(r"⟦([a-zA-Z0-9_]+)⟧", tagged))
