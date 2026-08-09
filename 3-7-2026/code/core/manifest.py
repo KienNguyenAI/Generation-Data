@@ -57,11 +57,27 @@ def build_manifest_for_used_fields(profile, tagged_fields):
                 if dyn_family: surfaces.append(dyn_family)
                 if a_fam: surfaces.append(a_fam)
             elif field == "middle_name":
-                if dyn_middle: surfaces.append(dyn_middle)
-                if a_mid: surfaces.append(a_mid)
+                if dyn_middle:
+                    surfaces.append(dyn_middle)
+                    parts = dyn_middle.split()
+                    if len(parts) > 1:
+                        surfaces.extend(parts)
+                if a_mid:
+                    surfaces.append(a_mid)
+                    parts = a_mid.split()
+                    if len(parts) > 1:
+                        surfaces.extend(parts)
             elif field == "given_name":
-                if dyn_given: surfaces.append(dyn_given)
-                if a_giv: surfaces.append(a_giv)
+                if dyn_given:
+                    surfaces.append(dyn_given)
+                    parts = dyn_given.split()
+                    if len(parts) > 1:
+                        surfaces.extend(parts)
+                if a_giv:
+                    surfaces.append(a_giv)
+                    parts = a_giv.split()
+                    if len(parts) > 1:
+                        surfaces.extend(parts)
             
             surfaces = list(dict.fromkeys([s for s in surfaces if s]))
             if not surfaces:

@@ -128,6 +128,77 @@ def sanitize_tags(text):
                 break
     return text
 
+def auto_close_unclosed_tags(text, profile):
+    if not text or not profile:
+        return text
+        
+    # Tìm các nhãn mở và đóng
+    open_tags = re.findall(r'⟦([a-zA-Z0-9_]+)⟧', text)
+    close_tags = re.findall(r'⟦/([a-zA-Z0-9_]+)⟧', text)
+    
+    unclosed_fields = []
+    for f in set(open_tags):
+        if open_tags.count(f) > close_tags.count(f):
+            unclosed_fields.append(f)
+            
+    if not unclosed_fields:
+        return text
+        
+    fl = pfields(profile)
+    from core.manifest import build_manifest_for_used_fields
+    manifest = build_manifest_for_used_fields(profile, unclosed_fields)
+    
+    # Tạo mapping field -> list of surfaces
+    field_surfaces = {}
+    for e in manifest:
+        fld = e["field"]
+        field_surfaces[fld] = sorted(e.get("surfaces", []), key=lambda x: -len(x))
+        
+    for fld in unclosed_fields:
+        surfaces = field_surfaces.get(fld, [])
+        if not surfaces:
+            continue
+            
+        tag_str = f"⟦{fld}⟧"
+        close_tag_str = f"⟦/{fld}⟧"
+        
+        parts = text.split(tag_str)
+        new_text = parts[0]
+        
+        for i in range(1, len(parts)):
+            part = parts[i]
+            matched_surface = None
+            for s in surfaces:
+                s_clean = re.sub(r'\s+', '', s).lower()
+                part_sub = part[:len(s) * 2]
+                part_sub_clean = re.sub(r'\s+', '', part_sub).lower()
+                
+                if part_sub_clean.startswith(s_clean):
+                    accum = ""
+                    idx = 0
+                    for ch in part:
+                        if not ch.isspace():
+                            accum += ch.lower()
+                        idx += 1
+                        if accum == s_clean:
+                            break
+                    if accum == s_clean:
+                        matched_surface = part[:idx]
+                        break
+            
+            if matched_surface:
+                rest = part[len(matched_surface):]
+                if not rest.strip().startswith(close_tag_str):
+                    new_text += tag_str + matched_surface + close_tag_str + rest
+                else:
+                    new_text += tag_str + part
+            else:
+                new_text += tag_str + part
+                
+        text = new_text
+        
+    return text
+
 def auto_tag_manifest_fields(tagged_text, manifest):
     if not tagged_text or not manifest:
         return tagged_text
@@ -298,6 +369,8 @@ def generate_one(profile, form_meta, register=None, outline=None, tagged_fields=
             
             # Sửa các lỗi định dạng thẻ đóng mở (nếu có)
             tagged = sanitize_tags(tagged)
+            # Tự động đóng các thẻ mở bị quên đóng
+            tagged = auto_close_unclosed_tags(tagged, profile)
             
             # We dynamically discover or reuse which fields the LLM actually chose to tag
             allowed_fields = set(selected_fields)
