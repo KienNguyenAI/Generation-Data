@@ -485,7 +485,7 @@ def run_batch(n=10):
     print(f"Tìm thấy {len(valid_forms)} biểu mẫu chứa văn bản mẫu trong form.json")
     
     # Nạp toàn bộ ngân hàng hồ sơ
-    pool = load_profiles(30000)
+    pool = load_profiles(80000)
     profile_lookup = {p["profile_id"]: p for p in pool}
     form_lookup = {f["template_id"]: f for f in valid_forms}
     
@@ -542,11 +542,35 @@ def run_batch(n=10):
     if len(plan) < total_needed:
         print(f"Đang lập kế hoạch sinh mới/mở rộng cho {total_needed} dòng...")
         
+        # Quét toàn bộ các file plan khác để thu thập các profile_id đã được sử dụng
+        used_profile_ids = set()
+        for p in OUT.glob("*_plan.json"):
+            if p.resolve() == plan_path.resolve():
+                continue
+            try:
+                other_plan = json.loads(p.read_text(encoding="utf-8"))
+                for item in other_plan:
+                    pid = item.get("profile_id")
+                    if not pid and "profile" in item:
+                        pid = item["profile"].get("profile_id")
+                    if pid:
+                        used_profile_ids.add(pid)
+            except Exception as e:
+                print(f"Bỏ qua đọc plan {p.name} khi quét trùng lặp: {e}")
+                
+        print(f"Phát hiện {len(used_profile_ids)} hồ sơ đã được lên kế hoạch ở các plan khác. Tiến hành loại bỏ trùng lặp...")
+        available_adult_pool = [p for p in adult_pool if p.get("profile_id") not in used_profile_ids]
+        print(f"Số lượng hồ sơ người lớn còn lại khả dụng: {len(available_adult_pool)}")
+        
+        if not available_adult_pool:
+            print("LỖI: Không còn hồ sơ người lớn nào khả dụng để lập kế hoạch!")
+            sys.exit(1)
+            
         while len(plan) < total_needed:
             idx = len(plan)
-            # Chọn biểu mẫu và hồ sơ hoàn toàn tuần tự/xác định
+            # Chọn biểu mẫu và hồ sơ hoàn toàn tuần tự/xác định từ pool khả dụng đã loại trùng
             form_meta = valid_forms[idx % len(valid_forms)]
-            profile = adult_pool[(prof_start_idx + idx) % len(adult_pool)]
+            profile = available_adult_pool[(prof_start_idx + idx) % len(available_adult_pool)]
             pid = profile.get("profile_id")
             
             # Xác định trường SPI nhạy cảm mục tiêu một cách xác định
