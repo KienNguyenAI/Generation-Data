@@ -358,7 +358,9 @@ def generate_one(profile, form_meta, register=None, outline=None, tagged_fields=
         
         # Chiến lược hiệu đính có điều kiện (Conditional Revision):
         # Kiểm tra xem bản nháp (draft) đã có dán nhãn hợp lệ chưa. Nếu hợp lệ thì bỏ qua bước gọi API hiệu đính.
-        for candidate_text, is_revised in [(draft, False), (None, True)]:
+        no_revision = os.environ.get("SECUREPI_NO_REVISION") == "1"
+        candidates = [(draft, False)] if no_revision else [(draft, False), (None, True)]
+        for candidate_text, is_revised in candidates:
             if is_revised:
                 print("      (Bản nháp chưa chuẩn nhãn, đang gọi API hiệu đính...)")
                 revision_prompt = build_revision_prompt(filtered_fields_desc_str, banned_fields_desc_str, draft, register)
