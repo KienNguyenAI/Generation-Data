@@ -97,6 +97,11 @@ def call_gemini(prompt, temperature=0.85):
     return content.strip()
 
 def clean_output(t):
+    # Loại bỏ khối suy nghĩ <think>...</think> của các dòng reasoning models
+    t = re.sub(r"<think>.*?</think>", "", t, flags=re.DOTALL)
+    if "<think>" in t:
+        t = t.split("<think>")[0]
+        
     t = re.sub(r"```[a-zA-Z]*\n?", "", t)
     t = t.replace("«", "").replace("»", "")   # LLM (nhất là flash-lite) hay chép dấu phân định « » -> bỏ
     return NFC(t.strip())
