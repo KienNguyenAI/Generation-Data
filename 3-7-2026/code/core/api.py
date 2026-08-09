@@ -47,7 +47,10 @@ def call_gemini(prompt, temperature=0.85):
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         try:
             with urllib.request.urlopen(req, timeout=api_timeout) as resp:
-                j = json.loads(resp.read().decode("utf-8"))
+                raw_str = resp.read().decode("utf-8")
+                if "data: [DONE]" in raw_str:
+                    raw_str = raw_str.split("data: [DONE]")[0].strip()
+                j = json.loads(raw_str)
             if j and "choices" in j and len(j["choices"]) > 0:
                 choice = j["choices"][0]
                 content = choice.get("message", {}).get("content")
