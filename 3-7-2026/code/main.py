@@ -25,7 +25,6 @@ def main():
     parser.add_argument("--plan", type=str, help="Path or filename of an existing plan JSON to reuse")
     parser.add_argument("--direct", action="store_true", help="Bypass 9Router and call OpenRouter/third-party API directly using the DEEPSEEKV4FLASH key in .env")
     parser.add_argument("--workers", type=int, default=1, help="Number of parallel workers (threads) for generation (default: 1)")
-    parser.add_argument("--no-revision", action="store_true", help="Bypass the conditional revision API call and only use the 1-step draft generation.")
 
     args = parser.parse_args()
 
@@ -44,9 +43,6 @@ def main():
     if args.direct:
         import os
         os.environ["SECUREPI_DIRECT_OPENROUTER"] = "1"
-    if args.no_revision:
-        import os
-        os.environ["SECUREPI_NO_REVISION"] = "1"
     if args.workers is not None:
         import os
         os.environ["SECUREPI_WORKERS"] = str(args.workers)

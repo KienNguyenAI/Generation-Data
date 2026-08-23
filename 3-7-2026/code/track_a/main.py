@@ -356,92 +356,75 @@ def generate_one(profile, form_meta, register=None, outline=None, tagged_fields=
         draft = clean_output(raw_draft)
         draft = sanitize_tags(draft)
         
-        # Chiến lược hiệu đính có điều kiện (Conditional Revision):
-        # Kiểm tra xem bản nháp (draft) đã có dán nhãn hợp lệ chưa. Nếu hợp lệ thì bỏ qua bước gọi API hiệu đính.
-        no_revision = os.environ.get("SECUREPI_NO_REVISION") == "1"
-        candidates = [(draft, False)] if no_revision else [(draft, False), (None, True)]
-        for candidate_text, is_revised in candidates:
-            if is_revised:
-                print("      (Bản nháp chưa chuẩn nhãn, đang gọi API hiệu đính...)")
-                revision_prompt = build_revision_prompt(filtered_fields_desc_str, banned_fields_desc_str, draft, register)
-                raw_revised = call_gemini(revision_prompt, temperature=0.2)
-                tagged = clean_output(raw_revised)
-            else:
-                tagged = candidate_text
-            
-            # Sửa các lỗi định dạng thẻ đóng mở (nếu có)
-            tagged = sanitize_tags(tagged)
-            # Tự động đóng các thẻ mở bị quên đóng
-            tagged = auto_close_unclosed_tags(tagged, profile)
-            
-            # We dynamically discover or reuse which fields the LLM actually chose to tag
-            allowed_fields = set(selected_fields)
-            # Always allow core PII fields to be tagged if the LLM chose to write them
-            allowed_fields.update(["full_name", "dob", "cccd", "address", "phone", "email"])
-            if "family_relations" in selected_fields:
-                allowed_fields.update(["address", "dob", "cccd", "phone", "email"])
-
-            # Tự động bọc nhãn cho các thực thể rò rỉ
-            full_manifest = build_manifest_for_used_fields(profile, allowed_fields)
-            tagged = auto_tag_manifest_fields(tagged, full_manifest)
-
-            if tagged_fields is None:
-                attempt_tagged_fields = set(re.findall(r"⟦([a-zA-Z0-9_]+)⟧", tagged))
-                attempt_tagged_fields = attempt_tagged_fields.intersection(allowed_fields)
-                
-                # Bắt buộc các trường critical hoặc SPI được chọn nếu xuất hiện trong văn bản thì phải được dán nhãn
-                required_to_tag = {f for f in selected_fields if (f in CRITICAL or SENS.get(f) == "SPI") and fl.get(f) is not None and str(fl.get(f)).strip() != ""}
-                
-                clean_text_draft = re.sub(r"⟦/?.*?⟧", "", tagged)
-                leaked = False
-                for f in required_to_tag:
-                    if f not in attempt_tagged_fields:
-                        f_manifest = build_manifest_for_used_fields(profile, {f})
-                        if f_manifest:
-                            surfaces = f_manifest[0].get("surfaces", [])
-                            if any(s.strip() and s.strip() in clean_text_draft for s in surfaces):
-                                leaked = True
-                                break
-                                
-                if leaked:
-                    ext_ok_override = False
-                else:
-                    ext_ok_override = True
-            else:
-                attempt_tagged_fields = set(tagged_fields)
-                allowed_fields.update(attempt_tagged_fields)
-                ext_ok_override = True
-            
-            # Build manifest containing ONLY these used fields
-            manifest = build_manifest_for_used_fields(profile, attempt_tagged_fields)
-            
-            # Choose a random surface variant for matching validation
-            for e in manifest:
-                if e.get("surfaces"):
-                    e["prompt_surface"] = random.choice(e["surfaces"])
-                else:
-                    e["prompt_surface"] = ""
-                    
-            ext = extract_anchor_tags(tagged, [e["field"] for e in manifest if e.get("anchor")])
-            if not ext_ok_override:
-                ext["ok"] = False
-            
-            # Restrict spans to only allowed_fields
-            ext["spans"] = [s for s in ext["spans"] if s["field"] in allowed_fields]
-            
-            clean = ext["clean_text"]
-            
-            # Coverage check (strictly on the dynamically constructed manifest)
-            miss = coverage(clean, manifest)
-            important = [f for f in miss if (f in CRITICAL or SENS.get(f) == "SPI") and f in selected_fields]
-            last = (manifest, clean, ext, miss, attempt_tagged_fields)
-            
-            # Nếu thẻ hợp lệ và không thiếu trường quan trọng, bỏ qua bước tiếp theo
-            if ext["ok"] and not important:
-                break
+        # Sửa các lỗi định dạng thẻ đóng mở (nếu có)
+        tagged = sanitize_tags(draft)
+        # Tự động đóng các thẻ mở bị quên đóng
+        tagged = auto_close_unclosed_tags(tagged, profile)
         
-        # Nếu đạt chuẩn ở bất kỳ bước nào trong vòng lặp candidate, thoát khỏi vòng lặp retry
-        if last[2]["ok"] and not [f for f in last[3] if (f in CRITICAL or SENS.get(f) == "SPI") and f in selected_fields]:
+        # We dynamically discover or reuse which fields the LLM actually chose to tag
+        allowed_fields = set(selected_fields)
+        # Always allow core PII fields to be tagged if the LLM chose to write them
+        allowed_fields.update(["full_name", "dob", "cccd", "address", "phone", "email"])
+        if "family_relations" in selected_fields:
+            allowed_fields.update(["address", "dob", "cccd", "phone", "email"])
+
+        # Tự động bọc nhãn cho các thực thể rò rỉ
+        full_manifest = build_manifest_for_used_fields(profile, allowed_fields)
+        tagged = auto_tag_manifest_fields(tagged, full_manifest)
+
+        if tagged_fields is None:
+            attempt_tagged_fields = set(re.findall(r"⟦([a-zA-Z0-9_]+)⟧", tagged))
+            attempt_tagged_fields = attempt_tagged_fields.intersection(allowed_fields)
+            
+            # Bắt buộc các trường critical hoặc SPI được chọn nếu xuất hiện trong văn bản thì phải được dán nhãn
+            required_to_tag = {f for f in selected_fields if (f in CRITICAL or SENS.get(f) == "SPI") and fl.get(f) is not None and str(fl.get(f)).strip() != ""}
+            
+            clean_text_draft = re.sub(r"⟦/?.*?⟧", "", tagged)
+            leaked = False
+            for f in required_to_tag:
+                if f not in attempt_tagged_fields:
+                    f_manifest = build_manifest_for_used_fields(profile, {f})
+                    if f_manifest:
+                        surfaces = f_manifest[0].get("surfaces", [])
+                        if any(s.strip() and s.strip() in clean_text_draft for s in surfaces):
+                            leaked = True
+                            break
+                            
+            if leaked:
+                ext_ok_override = False
+            else:
+                ext_ok_override = True
+        else:
+            attempt_tagged_fields = set(tagged_fields)
+            allowed_fields.update(attempt_tagged_fields)
+            ext_ok_override = True
+        
+        # Build manifest containing ONLY these used fields
+        manifest = build_manifest_for_used_fields(profile, attempt_tagged_fields)
+        
+        # Choose a random surface variant for matching validation
+        for e in manifest:
+            if e.get("surfaces"):
+                e["prompt_surface"] = random.choice(e["surfaces"])
+            else:
+                e["prompt_surface"] = ""
+                
+        ext = extract_anchor_tags(tagged, [e["field"] for e in manifest if e.get("anchor")])
+        if not ext_ok_override:
+            ext["ok"] = False
+        
+        # Restrict spans to only allowed_fields
+        ext["spans"] = [s for s in ext["spans"] if s["field"] in allowed_fields]
+        
+        clean = ext["clean_text"]
+        
+        # Coverage check (strictly on the dynamically constructed manifest)
+        miss = coverage(clean, manifest)
+        important = [f for f in miss if (f in CRITICAL or SENS.get(f) == "SPI") and f in selected_fields]
+        last = (manifest, clean, ext, miss, attempt_tagged_fields)
+        
+        # Nếu thẻ hợp lệ và không thiếu trường quan trọng, thoát khỏi vòng lặp retry
+        if ext["ok"] and not important:
             break
         
     manifest, clean, ext, miss, final_tagged_fields = last
