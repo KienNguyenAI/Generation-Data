@@ -1,0 +1,2392 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.50,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.50,0.00}{\textbf{#1}}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={ViPII: A Decree-13-Compliant Benchmark and Compact Models for Vietnamese PII Detection and Utility-Preserving De-identification},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{ViPII: A Decree-13-Compliant Benchmark and Compact Models for
+Vietnamese PII Detection and Utility-Preserving De-identification}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Section 1: Introduction}\label{section-1-introduction}
+
+The rapid adoption of artificial intelligence in Vietnamese public
+administration, healthcare, finance, and legal services has increased
+the need to process documents that contain personal data. Such documents
+commonly combine structured identifiers---such as citizen identity
+numbers, telephone numbers, and dates of birth---with context-dependent
+information, including family circumstances, health status, and
+location. A system that releases these documents to an external service
+for analysis may therefore create privacy, governance, and operational
+risks. At the same time, simply deleting every potentially sensitive
+string can make an administrative document unusable for search,
+auditing, case handling, or downstream language processing.
+
+This paper studies \textbf{utility-preserving sanitization} for
+Vietnamese personal data. The objective is not only to identify
+sensitive spans, but also to remove or replace them while retaining the
+non-sensitive procedural content and the linguistic coherence of the
+document. We focus on the terminology of Vietnam's Personal Data
+Protection Decree (Decree No.~13/2023/NĐ-CP), using \texttt{PII} and
+\texttt{SPI} as dataset-level shorthand for the decree's basic and
+sensitive personal-data tiers, respectively. The legal mapping defines
+the scope of the benchmark; it is not, by itself, a complete
+legal-compliance certification for any deployment.
+
+\subsection{1.1. Motivation and Problem
+Setting}\label{motivation-and-problem-setting}
+
+Existing multilingual PII tools provide useful starting points, but
+their entity inventories and decision rules are not designed around
+Vietnamese administrative conventions. Vietnamese documents contain
+identity numbers with local formatting, multi-component personal names,
+hierarchical addresses, and lexical items whose interpretation depends
+strongly on nearby cues. For example, \emph{Nam} may denote a person's
+gender, a geographic region, or part of a name, while \emph{Kinh} may
+denote an ethnicity or occur inside an unrelated phrase. Sensitive
+information such as health or family circumstances is often expressed as
+a long narrative clause rather than a short, regular expression match.
+
+These characteristics create two coupled technical requirements. First,
+a benchmark must represent the relevant legal fields and provide
+reliable character-level boundaries. Second, a sanitization system must
+optimize two objectives simultaneously: reducing residual privacy
+leakage and avoiding destructive over-redaction. ViPII addresses the
+first requirement through controlled synthetic generation and
+deterministic character-span calibration, and evaluates the second
+through a dual privacy--utility metric suite.
+
+\subsection{1.2. Research Gaps}\label{research-gaps}
+
+We identify four gaps that motivate the study:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Regulatory and taxonomy mismatch.} Widely used PII resources
+  and tools are generally organized around other legal or operational
+  taxonomies. They do not directly expose the 34-field PII/SPI inventory
+  used by this benchmark under the Vietnamese regulatory scope.
+\item
+  \textbf{Vietnamese administrative and linguistic specificity.} Local
+  identity formats, multi-level addresses, Vietnamese name structure,
+  and context-dependent words create failure cases that are
+  underrepresented in general-purpose PII benchmarks.
+\item
+  \textbf{Reliable span construction for synthetic text.} When a
+  language model is asked to generate prose and character offsets at the
+  same time, changes in Unicode text and subword tokenization can
+  produce incorrect boundaries. A reproducible benchmark therefore needs
+  to separate text generation from coordinate calculation.
+\item
+  \textbf{Privacy--utility trade-off in local deployment.} Cloud-scale
+  models may be difficult to use for sensitive documents because of
+  governance, latency, cost, or data-residency requirements. The
+  relative value of compact models adapted to the local task has not
+  been established under a common Vietnamese sanitization protocol.
+\end{enumerate}
+
+\subsection{1.3. The ViPII Approach}\label{the-vipii-approach}
+
+ViPII is a benchmark and data-construction framework for Vietnamese
+PII/SPI detection and utility-preserving sanitization. Its central
+design principle is to assign different responsibilities to the
+generator and the annotation pipeline. A manifest fixes the sensitive
+values and the fields that should appear; a language model renders those
+values in natural administrative contexts; and deterministic host-side
+procedures compute character spans after generation. The pipeline
+combines guarded verbatim matching, cue-context disambiguation, disjoint
+name-component decomposition, and semantic anchor-tag parsing. These
+mechanisms construct the ground truth offline and are not treated as the
+neural architecture of the evaluated models.
+
+The resulting corpus contains 47,881 documents and 474,874 annotated
+character spans covering 34 field classes. Each instance provides
+natural-language input, flat non-overlapping character spans, and
+sanitization targets. The benchmark reports privacy protection and
+utility retention together, with document-level \texttt{FULL} success
+requiring both the removal of annotated sensitive units and the
+preservation of evaluated non-sensitive operational units.
+
+\subsection{1.4. Contributions}\label{contributions}
+
+This paper makes the following contributions:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{A Vietnamese legal-scope benchmark.} We introduce a 34-field
+  PII/SPI benchmark aligned with the operational scope of Decree
+  No.~13/2023/NĐ-CP, covering structured identifiers, context-dependent
+  attributes, name components, and narrative sensitive information.
+\item
+  \textbf{A constraint-first synthesis and annotation pipeline.} We
+  present a decoupled generation process in which manifests and
+  controlled profiles specify target values, while deterministic
+  post-processing computes accepted character spans and resolves
+  candidate conflicts.
+\item
+  \textbf{A joint privacy--utility evaluation framework.} We define
+  sanitization and retention metrics at span, field, and document
+  levels, including the strict \texttt{FULL} measure for end-to-end
+  success.
+\item
+  \textbf{An empirical study of compact models.} On the current held-out
+  benchmark, fine-tuned Qwen3 compact models substantially improve over
+  their unadapted counterparts. The 0.6B model achieves 72.46\%
+  \texttt{SanRec} and 70.10\% \texttt{FULL}, while the 1.7B model
+  provides higher retention scores; comparisons with general-purpose
+  baselines are reported under the same evaluation protocol.
+\end{enumerate}
+
+\subsection{1.5. Scope and Organization}\label{scope-and-organization}
+
+The study focuses on Vietnamese text generated for administrative,
+legal, healthcare, and related social contexts. It evaluates the quality
+of synthetic annotations and the behavior of sanitization systems under
+the benchmark protocol; it does not claim that synthetic data fully
+represents all real-world documents or that a model score alone
+establishes legal compliance. Section 2 reviews related work. Section 3
+defines the tasks, legal taxonomy, and operational representation.
+Section 4 describes the constraint-first synthesis and annotation
+pipeline, and Section 5 reports corpus statistics and quality
+diagnostics. Section 6 presents the experimental comparison and main
+results. Subsequent sections analyze component effects, robustness,
+error patterns, practical deployment considerations, ethics,
+limitations, and reproducibility before concluding the paper.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Section 2: Related Work}\label{section-2-related-work}
+
+Research on personal-data protection in language technologies spans
+entity detection, de-identification, synthetic data generation, and
+privacy-aware model deployment. These lines of work are closely related
+but do not solve exactly the same problem. A detection system identifies
+spans that may reveal an individual; a de-identification system
+transforms those spans; and a synthetic-data pipeline determines how
+training examples can be created without exposing real records. ViPII
+connects these perspectives for Vietnamese administrative text by
+combining a legal field taxonomy, controlled generation, deterministic
+character-span construction, and joint privacy--utility evaluation.
+
+Early practical PII systems were largely built from rules, dictionaries,
+and modular recognizers. Microsoft Presidio, Google Cloud Data Loss
+Prevention, Philter, and Amnesia illustrate different combinations of
+regular expressions, entity recognizers, dictionaries, and
+general-purpose language models for finding or masking identifiers.
+These tools are valuable because they support structured credentials,
+configurable recognizers, and production-oriented workflows. However,
+their default inventories and decision policies are not designed around
+Vietnam's distinction between basic and sensitive personal data. They
+also provide limited support for Vietnamese administrative formats,
+including locally structured identity numbers, multi-level addresses,
+compound names, and ambiguous lexical cues. A regular expression can
+detect a digit sequence, but it cannot by itself determine whether that
+sequence is a citizen identifier or an administrative document code;
+similarly, a dictionary match for \emph{Nam} or \emph{Kinh} is
+insufficient without the surrounding clause. ViPII addresses this gap by
+defining an explicit 34-field inventory and by treating cue-context
+disambiguation as a first-class annotation mechanism rather than as an
+optional post-processing rule.
+
+Vietnamese named-entity recognition resources provide an important
+linguistic foundation but differ in scope and task objective. Benchmarks
+such as VLSP NER and PhoNER have advanced Vietnamese entity recognition
+for news, web, and general-domain text, while Vietnamese pretrained
+encoders such as PhoBERT have enabled strong token-level sequence
+labeling. These resources typically focus on proper-name categories such
+as persons, organizations, locations, and miscellaneous entities.
+Personal-data sanitization requires a different granularity. A telephone
+number, health-insurance identifier, date of birth, or bank account may
+not be a conventional named entity, and sensitive information such as a
+diagnosis or family hardship can extend across an entire narrative
+clause. In addition, privacy-oriented annotation must distinguish a
+person's name from a non-personal occurrence of the same word and must
+preserve subject roles when several individuals are mentioned in one
+document. ViPII therefore uses character spans with field-level labels
+and a separate legal sensitivity tier, allowing structured identifiers,
+name components, contextual attributes, and open-vocabulary sensitive
+clauses to coexist in one benchmark.
+
+Synthetic data generation has emerged as a response to the data-scarcity
+problem in privacy research. Because real medical, legal, financial, and
+administrative records cannot generally be redistributed, recent work
+has explored profile-guided generation, weak supervision, templated
+synthesis, and large-scale privacy-oriented corpora. PRIVASIS
+demonstrates that auxiliary control variables---such as personal
+profiles, record types, and background contexts---can be used to produce
+large synthetic collections and parallel sanitization data without
+relying on raw private documents. Other synthetic NER and tabular-data
+efforts similarly use schemas, templates, or programmatic constraints to
+control the entities that appear in generated examples. These approaches
+establish the feasibility of reference-free or low-risk corpus
+construction, but they leave open several issues for Vietnamese legal
+and administrative text: how to encode locally valid identifiers, how to
+represent the distinction between basic and sensitive data, how to
+generate realistic distractors, and how to recover exact spans after a
+language model has rewritten the surrounding prose. ViPII builds on the
+profile-guided paradigm while adding Vietnamese administrative
+constraints, multi-subject scenarios, and deterministic post-generation
+calibration.
+
+Programmatic labeling and weak supervision offer complementary
+strategies for reducing manual annotation cost. Frameworks such as
+Snorkel combine labeling functions, heuristic rules, and conflict
+resolution to produce probabilistic labels from noisy sources. Synthetic
+NER construction often follows a related principle by inserting known
+entities into text or by deriving labels from generation metadata. These
+methods are particularly useful when a corpus contains many structured
+patterns, but their labels remain dependent on the precision and
+coverage of the underlying rules. ViPII adopts a stricter separation of
+responsibilities: the manifest specifies which values should be
+realized, the language model supplies the surrounding prose, and the
+host-side pipeline computes accepted character offsets through verbatim
+matching, cue-context matching, name-component decomposition, and
+anchor-tag parsing. This design does not make semantic annotation
+infallible; rather, it removes one major source of error---LLM-generated
+coordinates---and makes the calibration procedure auditable. The
+benchmark consequently distinguishes candidate spans, non-sensitive
+distractors, and finalized ground-truth spans instead of treating
+manifest coverage as equivalent to model recall.
+
+The final body of related work concerns text sanitization and the
+preservation of utility after private information is removed.
+Traditional redaction systems replace an entity with a fixed mask or
+delete the surrounding phrase, which can protect privacy at the cost of
+grammaticality and task utility. More recent work frames sanitization as
+a conditional generation problem: the system receives a document and a
+privacy instruction, then removes, abstracts, or replaces selected
+information while retaining the rest of the record. This formulation is
+relevant to document search, summarization, analytics, and downstream
+language processing, where a sanitized record must remain intelligible
+rather than merely empty. It also motivates evaluating both residual
+leakage and over-redaction. ViPII operationalizes this trade-off through
+Sanitization Recall, field-level sanitization accuracy, Retention
+Recall, retention accuracy, and the strict document-level \texttt{FULL}
+score. In contrast to a privacy-only evaluation, the benchmark penalizes
+systems that protect privacy by deleting essential administrative
+content.
+
+Compact language models provide a practical deployment point for this
+problem. Large cloud models may offer broad linguistic coverage, but
+sending raw Vietnamese records to an external API can conflict with
+organizational governance, latency, cost, or data-residency
+requirements. Small models adapted to a specific taxonomy can instead be
+deployed on local servers or workstations and can be inspected,
+versioned, and updated within the responsible organization. Prior work
+on efficient language models and on-device privacy processing supports
+this direction, but there is limited evidence for Vietnamese PII/SPI
+sanitization under a common evaluation protocol. ViPII therefore
+compares fine-tuned Qwen3 compact models with unadapted compact models
+and general-purpose baselines, while treating the reference teacher
+pipeline as an empirical upper reference rather than as a directly
+comparable deployment target.
+
+In summary, existing systems contribute strong components---industrial
+recognizers, Vietnamese NER resources, synthetic-data paradigms,
+weak-supervision methods, and utility-aware sanitization---but they
+leave a methodological intersection insufficiently covered. ViPII
+focuses on that intersection: a legally scoped Vietnamese PII/SPI
+benchmark, generated from controlled profiles and administrative
+contexts, annotated through deterministic character-span calibration,
+and evaluated on the joint objective of privacy protection and
+information retention. The next section formalizes this task, its legal
+scope, and the operational representation used throughout the benchmark.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Section 3: Task Definition, Legal Taxonomy, and Operational
+Framework}\label{section-3-task-definition-legal-taxonomy-and-operational-framework}
+
+In this section, we formulate the dual tasks of span-level detection and
+generative sanitization in \textbf{ViPII}, ground the taxonomy in the
+statutory requirements of Vietnam's Personal Data Protection Decree
+(Decree No.~13/2023/NĐ-CP), and detail the deterministic operational
+mechanisms and conflict-resolution policies employed for ground-truth
+construction.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3.1. Formal Task Formulation}\label{formal-task-formulation}
+
+\subsubsection{Input Representation and Unicode Coordinate
+Space}\label{input-representation-and-unicode-coordinate-space}
+
+Let \(\mathcal{C}\) denote the finite alphabet of Unicode code points.
+To ensure strict canonical equivalence across Vietnamese combining
+diacritics and varying Input Method Editor (IME) representations, all
+text instances are normalized to Unicode Normalization Form C (NFC). An
+input document is represented as an ordered sequence of \(N\) Unicode
+code points:
+\[X_{\text{raw}} = (c_1, c_2, \dots, c_N), \quad c_t \in \mathcal{C}\]
+
+Within \(X_{\text{raw}}\), sensitive personal data instances reside as
+contiguous subsequences, termed \textbf{character spans}. A ground-truth
+personal data span is formally denoted by the tuple:
+\[y_i = \bigl(s_i, e_i, f_i, l_i\bigr)\] where: *
+\(s_i \in \{0, \dots, N-1\}\) is the 0-indexed inclusive start
+code-point offset in Python string representation. *
+\(e_i \in \{1, \dots, N\}\) is the 0-indexed exclusive end code-point
+offset (\(s_i < e_i\)). * \(f_i \in \mathcal{F}\) designates the
+fine-grained attribute category selected from the \textbf{34 fields}
+(\(\mathcal{F} = \{f_1, \dots, f_{34}\}\)). *
+\(l_i \in \{\text{PII}, \text{SPI}\}\) denotes the statutory
+classification under Decree 13: Basic Personal Data (\(\text{PII}\)) or
+Sensitive Personal Data (\(\text{SPI}\)).
+
+\begin{quote}
+\textbf{Measurement Invariant}: Character offsets in ViPII are defined
+strictly over \textbf{Unicode code points after NFC normalization}
+(\(0 \le s_i < e_i \le \text{len}(X)\) in Python 3). They are strictly
+distinct from multi-byte UTF-8 byte offsets (where Vietnamese accented
+characters occupy 2--3 bytes) and from tokenizer-dependent subword BPE
+token indices.
+\end{quote}
+
+\begin{verbatim}
+                                  ┌─────────────────────────────────────────────────────────────┐
+                                  │                     Input: Raw Text X_raw                   │
+                                  └──────────────────────────────┬──────────────────────────────┘
+                                                                 │
+                                 ┌───────────────────────────────┴──────────────────────────────┐
+                                 ▼                                                              ▼
+                  ┌──────────────────────────────┐                              ┌──────────────────────────────┐
+                  │           TASK 1:            │                              │           TASK 2:            │
+                  │     Span-level detection     │                              │      Utility-preserving      │
+                  │        and annotation        │                              │         sanitization         │
+                  └──────────────┬───────────────┘                              └──────────────┬───────────────┘
+                                 │                                                             │
+                                 ▼                                                             ▼
+                  ┌──────────────────────────────┐                              ┌──────────────────────────────┐
+                  │   Character Spans Y_hat      │                              │     Sanitized Text X_san     │
+                  │ {(s, e, field, PII/SPI)}     │                              │ Tag Masking / Synthetic Swap │
+                  └──────────────────────────────┘                              └──────────────┬───────────────┘
+                                                                                               │
+                                                                 ┌─────────────────────────────┴───────────────┐
+                                                                 ▼                                             ▼
+                                                  ┌──────────────────────────────┐              ┌──────────────────────────────┐
+                                                  │       Privacy Defense        │              │     Utility Preservation     │
+                                                  │  Residual Privacy Leakage ≈0 │              │       Over-redaction ≈ 0     │
+                                                  │    (High Sanitization Rec)   │              │     (High Retention Rec)     │
+                                                  └──────────────────────────────┘              └──────────────────────────────┘
+\end{verbatim}
+
+\subsubsection{Clarification of Text States in the Generation
+Pipeline}\label{clarification-of-text-states-in-the-generation-pipeline}
+
+To prevent mathematical conflation between intermediate pipeline
+artifacts and downstream inference inputs, we formally distinguish four
+text states: 1. \(X_{\text{tagged}}\): The raw draft emitted by the
+generator LLM containing inline semantic markup
+\texttt{⟦field⟧...⟦/field⟧}. 2. \(X_{\text{clean}}\): The clean natural
+language text resulting from parsing and completely stripping markup
+tags via a deterministic LIFO stack parser; ground-truth span offsets
+\(\mathcal{Y}^*\) are calibrated on this string. 3. \(X_{\text{raw}}\):
+The unannotated natural language document presented as input to
+downstream models (\(X_{\text{raw}} \equiv X_{\text{clean}}\) during
+benchmark inference). 4. \(X_{\text{sanitized}}\): The final
+de-identified text generated by the sanitization model
+\(\mathcal{M}(X_{\text{raw}})\).
+
+\subsubsection{Canonical Schema: Flat, Non-Overlapping Spans and Name
+Projection}\label{canonical-schema-flat-non-overlapping-spans-and-name-projection}
+
+The benchmark ground truth \(\mathcal{Y}^*\) exported in
+\texttt{dataset.jsonl} strictly follows a \textbf{flat, non-overlapping
+schema}:
+\[\mathcal{Y}^* = \{y_1^*, y_2^*, \dots, y_M^*\}, \quad \text{such that } e_i^* \le s_j^* \quad \forall i < j\]
+
+To reconcile flat sequence evaluation with the hierarchical nature of
+Vietnamese civil names (where a full name encompasses a surname, middle
+name, and given name), ViPII formalizes a \textbf{Disjoint Name
+Projection Operator} \(\Pi_{\text{name}}\).
+
+Let \(y_{\text{full}} = (s, e, \text{'full\_name'}, \text{'PII'})\)
+denote a composite civil name span. The operator
+\(\Pi_{\text{name}}(y_{\text{full}}, X)\) projects \(y_{\text{full}}\)
+onto a sequence of contiguous, non-overlapping sub-spans:
+\[\Pi_{\text{name}}(y_{\text{full}}, X) = \{(s_{\text{fam}}, e_{\text{fam}}, \text{'family\_name'}, \text{'PII'}), (s_{\text{mid}}, e_{\text{mid}}, \text{'middle\_name'}, \text{'PII'}), (s_{\text{giv}}, e_{\text{giv}}, \text{'given\_name'}, \text{'PII'})\}_{\text{non-empty}}\]
+satisfying the boundary ordering:
+\[s = s_{\text{fam}} < e_{\text{fam}} \le s_{\text{mid}} < e_{\text{mid}} \le s_{\text{giv}} < e_{\text{giv}} = e\]
+
+The fine-grained ground-truth representation
+\(\mathcal{Y}^*_{\text{decomposed}}\) is obtained via disjoint
+projection:
+\[\mathcal{Y}^*_{\text{decomposed}} = \Bigl(\mathcal{Y}^* \setminus \{y \in \mathcal{Y}^* \mid y.\text{field} = \text{'full\_name'}\}\Bigr) \cup \bigcup_{y \in \mathcal{Y}^*, y.\text{field} = \text{'full\_name'}} \Pi_{\text{name}}(y, X)\]
+
+This formulation ensures that both the composite view \(\mathcal{Y}^*\)
+and the decomposed view \(\mathcal{Y}^*_{\text{decomposed}}\) are
+strictly flat partitions over the code-point space, avoiding invalid
+nested span collisions during sequence evaluation.
+
+\subsubsection{Task 1: Span-Level Detection and
+Annotation}\label{task-1-span-level-detection-and-annotation}
+
+In this structured prediction mode, a model
+\(g: \mathcal{X} \to 2^{\mathcal{S}}\) ingests \(X_{\text{raw}}\) and
+predicts a set of character spans:
+\[\hat{\mathcal{Y}} = \bigl\{\hat{y}_j = (\hat{s}_j, \hat{e}_j, \hat{f}_j, \hat{l}_j)\bigr\}_{j=1}^{\hat{M}}\]
+
+A predicted span \(\hat{y}_j\) is evaluated as a strict exact match
+against a ground-truth entity \(y_i^*\) if and only if:
+\[\hat{s}_j = s_i^* \quad \land \quad \hat{e}_j = e_i^* \quad \land \quad \hat{f}_j = f_i^* \quad \land \quad \hat{l}_j = l_i^*\]
+
+\subsubsection{Task 2: Utility-Preserving
+Sanitization}\label{task-2-utility-preserving-sanitization}
+
+In this generative de-identification mode, an end-to-end model
+\(\mathcal{M}: \mathcal{X} \to \mathcal{X}\) transforms
+\(X_{\text{raw}}\) directly into a \textbf{sanitized text}:
+\[X_{\text{sanitized}} = \mathcal{M}(X_{\text{raw}})\]
+
+De-identification follows two operational paradigms: 1. \textbf{Tag
+Masking}: Replacing sensitive spans \(X_{\text{raw}}[s_i:e_i]\) with
+standardized category mask tokens:
+\[\tau(f_i) \in \bigl\{\texttt{[HỌ\_TÊN]}, \texttt{[CCCD]}, \texttt{[SỐ\_ĐIỆN\_THOẠI]}, \texttt{[TÌNH\_TRẠNG\_SỨC\_KHỎE]}, \dots\bigr\}\]
+2. \textbf{Consistent Synthetic Replacement}: Substituting sensitive
+spans with synthetic values from an isolated demographic database,
+preserving global grammatical agreement and referential coherence across
+documents.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3.2. Conceptual Objectives: Privacy Leakage versus Utility
+Retention}\label{conceptual-objectives-privacy-leakage-versus-utility-retention}
+
+The evaluation of utility-preserving de-identification balances privacy
+defense against information utility. We formalize this duality
+conceptually through \textbf{residual privacy leakage} and
+\textbf{over-redaction}.
+
+Let \(\mathcal{P}(X_{\text{raw}})\) denote the set of ground-truth
+sensitive personal data units (spans or attributes) contained within
+document \(X_{\text{raw}}\), and let \(\mathcal{U}(X_{\text{raw}})\)
+denote the set of non-sensitive operational, procedural, administrative,
+and syntactic information units necessary to preserve document utility.
+
+\subsubsection{Residual Privacy Leakage}\label{residual-privacy-leakage}
+
+When a sanitization model processes \(X_{\text{raw}}\), any personal
+data entity belonging to \(\mathcal{P}(X_{\text{raw}})\) that remains
+identifiable or recoverable in \(X_{\text{sanitized}}\) constitutes an
+empirical privacy failure.
+
+Let \(\mathbb{I}_{\text{leak}}(y_i^*, X_{\text{sanitized}})\) be an
+indicator function evaluated under an explicit verification protocol
+\(\mathcal{V}_{\text{privacy}}(y_i^*, X_{\text{sanitized}})\), returning
+1 if the sensitive content of ground-truth span \(y_i^*\) persists in
+\(X_{\text{sanitized}}\) in unredacted or recoverable form, and 0 if
+successfully sanitized. The empirical \textbf{Residual Privacy Leakage
+Rate} (\(\mathcal{L}_{\text{privacy}}\)) across a test corpus of \(D\)
+documents is expressed as:
+
+\[\mathcal{L}_{\text{privacy}} = 1 - \text{SanRec} = \frac{\sum_{d=1}^D \sum_{i=1}^{M_d} \mathbb{I}_{\text{leak}}(y_{d,i}^*, X_{d,\text{sanitized}})}{\sum_{d=1}^D M_d}\]
+
+where \(\text{SanRec}\) denotes \textbf{Sanitization Recall}.
+
+\begin{quote}
+\textbf{Methodological Disclaimer}: Residual leakage is measured
+specifically against the predefined ground-truth sensitive units under
+an explicitly specified matching and privacy-audit protocol. While
+\(1 - \text{SanRec}\) quantifies the empirical leakage rate of annotated
+entities, in production environments privacy verification also requires
+auditing partial obfuscations, model hallucinations, and linkage
+attacks; these operational evaluation protocols are formalized in
+Section 6. A zero-leakage target (\(\mathcal{L}_{\text{privacy}} = 0\))
+is adopted as a conservative engineering objective for privacy-sensitive
+deployments; it should not be interpreted as a complete legal compliance
+determination.
+\end{quote}
+
+\subsubsection{Over-Redaction and Utility
+Retention}\label{over-redaction-and-utility-retention}
+
+Conversely, if the sanitization model aggressively suppresses or deletes
+non-sensitive administrative content, procedural instructions, legal
+references, or grammatical connectives
+(\(u_k \in \mathcal{U}(X_{\text{raw}})\)), the document's downstream
+utility is compromised.
+
+Let \(\mathbb{I}_{\text{suppress}}(u_k, X_{\text{sanitized}})\) indicate
+whether a valid operational information token
+\(u_k \in \mathcal{U}(X_{\text{raw}})\) has been erroneously masked or
+destroyed. The \textbf{Over-Redaction Rate}
+(\(\mathcal{O}_{\text{redact}}\)) is defined conceptually as:
+
+\[\mathcal{O}_{\text{redact}} = 1 - \text{RetRec} = \frac{\sum_{d=1}^D \sum_{k=1}^{K_d} \mathbb{I}_{\text{suppress}}(u_{d,k}, X_{d,\text{sanitized}})}{\sum_{d=1}^D K_d}\]
+
+where \(\text{RetRec}\) denotes \textbf{Retention Recall}. The
+operational construction of \(\mathcal{U}(X)\) (derived from procedural
+form slots and lexical references), the matching policy (accounting for
+semantic paraphrasing vs.~destructive deletion), and the aggregation
+schemes across tokens, attributes, and records (\(\text{RetAtt}\),
+\(\text{RetA/R}\), \(\text{RetRec}\)) are concretely specified in
+Section 6.
+
+\subsubsection{\texorpdfstring{Comprehensive Success Metric:
+\(\text{FULL}\)}{Comprehensive Success Metric: \textbackslash text\{FULL\}}}\label{comprehensive-success-metric-textfull}
+
+A sanitization system achieves full end-to-end success on a document if
+and only if it incurs zero residual privacy leakage and zero
+over-redaction of operational slots:
+
+\[\text{FULL} = \frac{1}{D} \sum_{d=1}^D \Biggl[ \prod_{i=1}^{M_d} \bigl(1 - \mathbb{I}_{\text{leak}}(y_{d,i}^*, X_{d,\text{sanitized}})\bigr) \times \prod_{k=1}^{K_d} \bigl(1 - \mathbb{I}_{\text{suppress}}(u_{d,k}, X_{d,\text{sanitized}})\bigr) \Biggr]\]
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3.3. Legal Scope and the Decree-13 Taxonomy (34
+Fields)}\label{legal-scope-and-the-decree-13-taxonomy-34-fields}
+
+\subsubsection{Statutory Context and
+Jurisdiction}\label{statutory-context-and-jurisdiction}
+
+The statutory taxonomy of ViPII is established under the legal framework
+of the Socialist Republic of Vietnam, categorized across three legal
+instruments: 1. \textbf{Enacted Statutory Law (Currently in Effect)}:
+\textbf{Decree No.~13/2023/NĐ-CP on Personal Data Protection (PDPD)},
+promulgated by the Government of Vietnam on April 17, 2023, and
+effective July 1, 2023: * \textbf{Articles 2(3) and 3}: Formally define
+and list the classes comprising Basic Personal Data (\(\text{PII}\)). *
+\textbf{Articles 2(4) and 4}: Formally define and list the classes
+comprising Sensitive Personal Data (\(\text{SPI}\)). * \textbf{Article
+8}: Stipulates strict prohibitions against illegal processing or
+unauthorized disclosure of personal data. * \textbf{Article 25}: Imposes
+stringent regulatory conditions on cross-border transfers of Vietnamese
+citizen data, underscoring the necessity for compact, local on-premise
+de-identification models. 2. \textbf{Enacted Administrative Instrument}:
+\textbf{Resolution No.~202/2025/QH15} of the National Assembly on
+administrative territorial restructuring, which mandates tracking
+historical and merged provincial/communal designations in civil
+documentation. 3. \textbf{Prospective Regulatory Horizon}: The
+\textbf{Draft Law on Personal Data Protection (PDPD 2025/2026)}, which
+outlines enhanced audit obligations; this draft is cited strictly as
+motivational background for forward-looking compliance, not as currently
+enacted statutory law.
+
+\subsubsection{The 34 Field Classes}\label{the-34-field-classes}
+
+Under Decree 13, personal data is partitioned into two statutory tiers:
+* \textbf{Basic Personal Data (\(\text{PII}\) - 18 Fields)}: Identifiers
+that uniquely or collectively identify an individual in civil,
+administrative, and commercial spheres. * \textbf{Sensitive Personal
+Data (\(\text{SPI}\) - 16 Fields)}: Information intimately linked to
+private rights and liberties which, if breached, directly imperils
+dignity, financial standing, social security, or personal safety.
+
+\paragraph{Table 3.1: Summary of the 34 Fields under the ViPII Decree-13
+Legal
+Taxonomy}\label{table-3.1-summary-of-the-34-fields-under-the-vipii-decree-13-legal-taxonomy}
+
+\emph{(For the exhaustive statutory citations, detailed legal
+definitions, and canonical Vietnamese examples for all 34 fields, see
+Appendix A).}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2353}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2941}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2353}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2353}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Statutory Tier
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Field Count
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Category Clusters
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Field Identifiers (\(f \in \mathcal{F}\))
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{Basic Personal Data}(\textbf{PII} - Decree 13, Art. 2(3) \& 3) &
+\textbf{18} & \textbf{Civil \& Identity Numbers}\emph{(8 fields)} &
+\texttt{cccd} (Citizen ID 12 digits), \texttt{cmnd} (Legacy ID 9
+digits), \texttt{phone}, \texttt{email}, \texttt{passport\_number},
+\texttt{driver\_license}, \texttt{vehicle\_plate}, \texttt{tax\_code} \\
+& & \textbf{Civil Identifiers \& Names}\emph{(5 fields)} &
+\texttt{full\_name}, \texttt{family\_name}, \texttt{middle\_name},
+\texttt{given\_name}, \texttt{address} \\
+& & \textbf{Demographic \& Digital}\emph{(5 fields)} & \texttt{dob}
+(Date of birth), \texttt{gender}, \texttt{marital\_status},
+\texttt{nationality}, \texttt{digital\_account} \\
+\textbf{Sensitive Personal Data}(\textbf{SPI} - Decree 13, Art. 2(4) \&
+4) & \textbf{16} & \textbf{Financial \& Digital Credential}\emph{(4
+fields)} & \texttt{bank\_account}, \texttt{social\_insurance\_no}
+(BHXH), \texttt{health\_insurance\_no} (BHYT), \texttt{eid\_credentials}
+(VNeID) \\
+& & \textbf{Belief, Origin \& Tracking}\emph{(6 fields)} &
+\texttt{ethnicity}, \texttt{religion}, \texttt{political\_view},
+\texttt{location\_data}, \texttt{behavioral\_data},
+\texttt{place\_components} \\
+& & \textbf{Vulnerable Life \& Health}\emph{(6 fields)} &
+\texttt{health\_status}, \texttt{criminal\_record},
+\texttt{private\_life}, \texttt{family\_relations},
+\texttt{sexual\_orientation}, \texttt{biometric} \\
+\textbf{Total} & \textbf{34} & --- & --- \\
+\end{longtable}
+}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3.4. Operational Ground-Truth Construction
+Mechanisms}\label{operational-ground-truth-construction-mechanisms}
+
+\begin{quote}
+\textbf{Important Architectural Clarification}: The four mechanisms
+described below are \textbf{deterministic algorithmic modules executed
+offline within the pipeline} to construct ground-truth annotations
+(\(\mathcal{Y}^*\)) and calibrate span coordinates with zero offset
+error. They do \textbf{not} constitute the neural model architecture
+evaluated in Section 6. Downstream models (such as fine-tuned Qwen-3
+SLMs and frontier LLMs) receive only unannotated natural language
+(\(X_{\text{raw}}\)) and must learn to identify spans or generate
+sanitized text end-to-end without auxiliary symbolic cues.
+\end{quote}
+
+To eliminate coordinate drift without manual re-annotation, the pipeline
+partitions the 34 fields across \textbf{four primary operational
+mechanisms}:
+
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                          FOUR GROUND-TRUTH CALIBRATION MECHANISMS IN VIPII                              │
+├───────────────────────────────┬─────────────────────────────────────────────────────────────────────────┤
+│ 1. Verbatim Matching          │ Guarded word-boundary Regex lookaround matching invariant values.       │
+│    (via: verbatim - 13 fields)│ Applied to canonical credentials, phone, CCCD, email, full names.       │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 2. Cue-Context Disambiguation │ 80-character sentence-bounded lookback window for trigger cues.         │
+│    (via: cue_context - 10 fld)│ Disambiguates homographs (e.g., "Kinh" ethnicity vs. "kinh tế").        │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 3. Name-Component             │ Algorithmic decomposition of Vietnamese personal names into             │
+│    Decomposition              │ Surname, Middle Name, and Given Name components.                        │
+│    (via: name_component - 3 f)│ Handled via disjoint parsing over resolved full_name spans.             │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+│ 4. Semantic Anchor-Tag        │ Linear-time O(N) LIFO stack parser decoding inline tags                 │
+│    Parsing (via: anchor_tag)  │ ⟦field⟧...⟦/field⟧ for complex, free-form, variable-length SPI clauses  │
+│    (8 fields: 1 PII, 7 SPI)   │ (plus conversational PII digital_account handles).                      │
+└───────────────────────────────┴─────────────────────────────────────────────────────────────────────────┘
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Guarded Verbatim Matching (\texttt{via:\ verbatim} - 13
+  fields)}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \emph{Principle}: Matches invariant alphanumeric credentials and
+    addresses pre-specified in the generation manifest. Uses
+    Unicode-aware zero-width lookaround assertions:
+    \[R(v) = \texttt{(?<!\textbackslash{}w)} + \text{re.escape}(v) + \texttt{(?!\textbackslash{}w)}\]
+  \item
+    \emph{Fields (13 fields: 10 PII, 3 SPI)}: Basic PII: \texttt{cccd},
+    \texttt{cmnd}, \texttt{phone}, \texttt{email},
+    \texttt{passport\_number}, \texttt{driver\_license},
+    \texttt{vehicle\_plate}, \texttt{tax\_code}, \texttt{address},
+    \texttt{full\_name}. Sensitive SPI: \texttt{bank\_account},
+    \texttt{social\_insurance\_no}, \texttt{health\_insurance\_no}.
+  \end{itemize}
+\item
+  \textbf{Cue-Context Disambiguation (\texttt{via:\ cue\_context} - 10
+  fields)}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \emph{Principle}: Resolves lexical homographs (e.g., ethnic
+    \emph{Kinh} vs.~\emph{kinh tế}, gender \emph{Nam} vs.~geographic
+    \emph{miền Nam}) and general dates. The matcher inspects a sliding
+    window backwards up to \(W = 80\) characters, bounded by sentence
+    terminators (\texttt{.}, \texttt{;}, \texttt{\textbackslash{}n},
+    \texttt{!}, \texttt{?}). A span is extracted only when an
+    authoritative trigger cue is co-located in the clause.
+  \item
+    \emph{Fields (10 fields: 4 PII, 6 SPI)}: Basic PII: \texttt{dob},
+    \texttt{gender}, \texttt{marital\_status}, \texttt{nationality}.
+    Sensitive SPI: \texttt{ethnicity}, \texttt{religion},
+    \texttt{political\_view}, \texttt{location\_data},
+    \texttt{behavioral\_data}, \texttt{place\_components}.
+  \end{itemize}
+\item
+  \textbf{Name-Component Decomposition (\texttt{via:\ name\_component} -
+  3 fields)}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \emph{Principle}: Splits validated \texttt{full\_name} strings into
+    onomastic constituents using rule-based parsing over Vietnamese
+    compound surnames (\texttt{ho\_kep}) and ethnic patronymic prefixes
+    (\(Y\), \(H'\)).
+  \item
+    \emph{Fields (3 fields: 3 PII, 0 SPI)}: Basic PII:
+    \texttt{family\_name}, \texttt{middle\_name}, \texttt{given\_name}.
+  \end{itemize}
+\item
+  \textbf{Semantic Anchor-Tag Parsing (\texttt{via:\ anchor\_tag} - 8
+  fields)}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \emph{Principle}: Variable-length, narrative clauses lacking fixed
+    patterns are enclosed by the generator in lightweight delimiters
+    \texttt{⟦field⟧...⟦/field⟧}. A single-pass \(\mathcal{O}(N)\) LIFO
+    stack parser extracts exact coordinates, records ground-truth spans,
+    and strips all tags to yield \(X_{\text{clean}}\).
+  \item
+    \emph{Fields (8 fields: 1 PII, 7 SPI)}: Basic PII (1 field):
+    \texttt{digital\_account} (informal OTT conversational handles;
+    standard URLs can also be extracted verbatim). Sensitive SPI (7
+    fields): \texttt{health\_status}, \texttt{criminal\_record},
+    \texttt{private\_life}, \texttt{family\_relations},
+    \texttt{sexual\_orientation}, \texttt{biometric},
+    \texttt{eid\_credentials}.
+  \end{itemize}
+\end{enumerate}
+
+\subsubsection{Table 3.2: Disjoint Cross-Mapping Matrix: Decree 13
+Statutory Tiers vs.~Primary Operational
+Mechanisms}\label{table-3.2-disjoint-cross-mapping-matrix-decree-13-statutory-tiers-vs.-primary-operational-mechanisms}
+
+Every field is assigned to \textbf{exactly one primary operational
+mechanism}, producing an exact mathematical partition:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2353}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2353}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2353}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2941}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Primary Operational Mechanism
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Basic Personal Data (PII) {[}18 Fields{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Sensitive Personal Data (SPI) {[}16 Fields{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Total Partition
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{1. Verbatim Matching} (\texttt{via:\ verbatim}) & \texttt{cccd},
+\texttt{cmnd}, \texttt{phone}, \texttt{email},
+\texttt{passport\_number}, \texttt{driver\_license},
+\texttt{vehicle\_plate}, \texttt{tax\_code}, \texttt{address},
+\texttt{full\_name} {[}10 fields{]} & \texttt{bank\_account},
+\texttt{social\_insurance\_no}, \texttt{health\_insurance\_no} {[}3
+fields{]} & \textbf{13} \\
+\textbf{2. Cue-Context Disambiguation} (\texttt{via:\ cue\_context}) &
+\texttt{dob}, \texttt{gender}, \texttt{marital\_status},
+\texttt{nationality} {[}4 fields{]} & \texttt{ethnicity},
+\texttt{religion}, \texttt{political\_view}, \texttt{location\_data},
+\texttt{behavioral\_data}, \texttt{place\_components} {[}6 fields{]} &
+\textbf{10} \\
+\textbf{3. Name-Component Decomposition}
+(\texttt{via:\ name\_component}) & \texttt{family\_name},
+\texttt{middle\_name}, \texttt{given\_name} {[}3 fields{]} &
+\emph{(None)} {[}0 fields{]} & \textbf{3} \\
+\textbf{4. Semantic Anchor-Tag Parsing} (\texttt{via:\ anchor\_tag}) &
+\texttt{digital\_account} {[}1 field{]} & \texttt{health\_status},
+\texttt{criminal\_record}, \texttt{private\_life},
+\texttt{family\_relations}, \texttt{sexual\_orientation},
+\texttt{biometric}, \texttt{eid\_credentials} {[}7 fields{]} &
+\textbf{8} \\
+\textbf{Total Exact Partition} & \textbf{18 Fields} & \textbf{16 Fields}
+& \textbf{34 Fields} \\
+\end{longtable}
+}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3.5. Conflict Resolution and Priority Lattice
+Policy}\label{conflict-resolution-and-priority-lattice-policy}
+
+During ground-truth construction, multiple matchers may yield
+overlapping candidate spans. For example, an atomic credential may
+appear inside a narrative \texttt{private\_life} clause, or a surname
+matcher may conflict with an encompassing full name. To enforce a strict
+flat representation \(\mathcal{Y}^*\), the pipeline executes a
+deterministic \textbf{5-Tier Priority Lattice} conflict resolution
+policy.
+
+\subsubsection{Formal Set Relationships}\label{formal-set-relationships}
+
+We formally partition all extracted spans into three sets: 1.
+\textbf{Candidate Spans (\(\mathcal{S}_{\text{cand}}\))}: The raw set of
+all span hypotheses produced by the four offline extraction mechanisms:
+\[\mathcal{S}_{\text{cand}} = \mathcal{S}_{\text{sensitive-cand}} \cup \mathcal{S}_{\text{distractor}}, \quad \mathcal{S}_{\text{sensitive-cand}} \cap \mathcal{S}_{\text{distractor}} = \emptyset\]
+2. \textbf{Adversarial Distractor Spans
+(\(\mathcal{S}_{\text{distractor}}\))}: Non-sensitive structural tokens
+injected during generation to test discrimination---specifically
+12-digit administrative document codes (\texttt{doc\_code} of type
+\texttt{num12}) carrying label \texttt{O}. These spans participate
+actively during overlap resolution to suppress false-positive matching
+against 12-digit \texttt{cccd} credentials. 3. \textbf{Resolved Set
+(\(\mathcal{S}_{\text{resolved}}\))}: The maximal conflict-free subset
+produced by the priority lattice operator
+\(\Omega(\mathcal{S}_{\text{cand}})\). 4. \textbf{Final Ground-Truth
+Spans (\(\mathcal{Y}^*\))}: The finalized, non-overlapping set of
+validated PII/SPI spans exported in \texttt{dataset.jsonl}, obtained by
+filtering out distractors:
+\[\mathcal{Y}^* = \{s \in \mathcal{S}_{\text{resolved}} \mid \text{label}(s) \neq \text{'O'}\}, \quad \text{where } \mathcal{S}_{\text{distractor}} \cap \mathcal{Y}^* = \emptyset\]
+
+\subsubsection{The 5-Tier Priority
+Lattice}\label{the-5-tier-priority-lattice}
+
+Candidate spans are prioritized according to semantic precision and
+statutory sensitivity:
+\[\text{Tier 1 (Weight 100)} \succ \text{Tier 2 (Weight 80)} \succ \text{Tier 3 (Weight 60)} \succ \text{Tier 4 (Weight 50)} \succ \text{Tier 5 (Weight 40)}\]
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Tier 1 (Invariant Atomic IDs, Weight 100)}: \texttt{cccd},
+  \texttt{cmnd}, \texttt{phone}, \texttt{email},
+  \texttt{passport\_number}, \texttt{driver\_license},
+  \texttt{vehicle\_plate}, \texttt{tax\_code}, \texttt{dob},
+  \texttt{bank\_account}, \texttt{social\_insurance\_no},
+  \texttt{health\_insurance\_no}, \texttt{eid\_credentials}, and non-PII
+  distractor codes (\texttt{doc\_code}). \emph{Atomic credentials take
+  absolute precedence and cannot be overwritten.}
+\item
+  \textbf{Tier 2 (Specialized SPI Clauses, Weight 80)}:
+  \texttt{health\_status}, \texttt{criminal\_record},
+  \texttt{biometric}, \texttt{ethnicity}, \texttt{religion},
+  \texttt{political\_view}, \texttt{sexual\_orientation}.
+\item
+  \textbf{Tier 3 (Core Civil PII, Weight 60)}: \texttt{full\_name},
+  \texttt{address}, \texttt{family\_relations},
+  \texttt{digital\_account}, \texttt{marital\_status}, \texttt{gender},
+  \texttt{nationality}.
+\item
+  \textbf{Tier 4 (Standalone Personal Names, Weight 50)}: Standalone
+  \texttt{given\_name} appearing in dialogue greetings or signature
+  lines outside a \texttt{full\_name} span.
+\item
+  \textbf{Tier 5 (Broad Contextual SPI, Weight 40)}:
+  \texttt{private\_life}, \texttt{location\_data},
+  \texttt{behavioral\_data}.
+\end{itemize}
+
+\subsubsection{Algorithmic Tie-Breaking and Formal Interval
+Subtraction}\label{algorithmic-tie-breaking-and-formal-interval-subtraction}
+
+When two candidate spans \(s_a, s_b \in \mathcal{S}_{\text{cand}}\)
+collide
+(\(s_a.\text{start} < s_b.\text{end} \land s_b.\text{start} < s_a.\text{end}\)),
+collisions are resolved via a deterministic hierarchy: 1.
+\textbf{Primary: Priority Weight}: Higher tier weight wins
+(\(\text{weight}(s_a) > \text{weight}(s_b)\)). 2. \textbf{Secondary:
+Span Length}: If weights are equal, the longer span is retained
+(Longest-Match: \(e_a - s_a > e_b - s_b\)). 3. \textbf{Tertiary: Start
+Offset}: If weights and lengths are identical, the earlier span wins
+(Left-to-Right: \(s_a.\text{start} < s_b.\text{start}\)).
+
+\begin{quote}
+\textbf{Formal Interval Subtraction for Broad Narrative Contexts (Tier
+5)}: When a Tier 5 broad narrative span
+\(I_{\text{broad}} = [s_{\text{broad}}, e_{\text{broad}})\) intersects
+with a set of \(K\) already accepted higher-priority intervals
+\(\mathcal{I}_{\text{higher}} = \{[s_k, e_k)\}_{k=1}^K\), rather than
+dropping the broad context entirely, the pipeline computes the set
+difference:
+\[\text{Res}(I_{\text{broad}}) = I_{\text{broad}} \setminus \bigcup_{k=1}^K [s_k, e_k) = \bigcup_{j=1}^J [s'_j, e'_j)\]
+where each \([s'_j, e'_j)\) is a maximal contiguous, non-empty
+sub-interval. A residual sub-interval is retained as a valid
+ground-truth span if and only if \(e'_j - s'_j \ge \theta_{\text{min}}\)
+(where \(\theta_{\text{min}} = 5\) code points), ensuring surrounding
+domestic and narrative hardship is preserved without swallowing atomic
+credentials.
+\end{quote}
+
+\begin{verbatim}
+Algorithm 1: Deterministic 5-Tier Priority Overlap Resolution (Ω)
+──────────────────────────────────────────────────────────────────────────────────
+Input  : Raw candidate spans S_cand, Priority weight function w(·), 
+         Minimum residual context threshold θ_min = 5
+Output : Conflict-free ground-truth span set Y*
+
+1:  S_sorted ← Sort S_cand by primary key w(s) descending, 
+                     secondary key (e - s) descending, tertiary key s ascending
+2:  S_accepted ← ∅
+3:  for each span s in S_sorted do
+4:      I_collide ← {a ∈ S_accepted | s.start < a.end ∧ a.start < s.end}
+5:      if I_collide = ∅ then
+6:          S_accepted ← S_accepted ∪ {s}
+7:      else if w(s) = 40 then  // Tier 5: Broad contextual narrative span
+8:          Res(s) ← [s.start, s.end) \ ⋃_{a ∈ I_collide} [a.start, a.end)
+9:          for each contiguous interval [s'_j, e'_j) in Res(s) do
+10:             if (e'_j - s'_j) ≥ θ_min then
+11:                 s_trim ← InstantiateSpan(s'_j, e'_j, s.field, s.label, s.via)
+12:                 S_accepted ← S_accepted ∪ {s_trim}
+13:             end if
+14:         end for
+15:     end if
+16: end for
+17: Y* ← {s ∈ S_accepted | s.label ≠ "O"}  // Filter out adversarial non-PII distractors
+18: return Sort Y* by start offset ascending
+──────────────────────────────────────────────────────────────────────────────────
+\end{verbatim}
+
+By formalizing these definitions, set relations, and deterministic
+policies, Section 3 provides an unambiguous, mathematically consistent
+foundation for the synthesis pipeline (Section 4), benchmark statistics
+(Section 5), and experimental evaluations (Section 6).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Section 4: Constraint-First Data Synthesis and Annotation
+Pipeline}\label{section-4-constraint-first-data-synthesis-and-annotation-pipeline}
+
+In this section, we present the end-to-end architecture of the
+\textbf{ViPII} data generation and annotation pipeline. We explain the
+foundational design invariants---\emph{Controlled Synthesis by
+Construction} and \emph{Deterministic Server-Side Calibration}---and
+systematically trace each stage: demographic profile banking, procedural
+manifest construction, adversarial distractor synthesis, two-stage
+contextual prompting, deterministic markup parsing, character-span
+calibration, priority lattice conflict resolution, and the resulting
+parallel de-identification dataset format.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4.1. Pipeline Overview and Core Architectural
+Invariants}\label{pipeline-overview-and-core-architectural-invariants}
+
+Existing privacy datasets frequently suffer from two methodological
+failure modes: (1) relying on heuristic regular expressions and
+dictionary lookups over uncurated web scrapes, which yields severe label
+noise and coordinate shifts; or (2) prompting autoregressive language
+models to directly predict numeric character offsets, which inevitably
+triggers the \emph{Cumulative Index Offset Drift} catastrophe due to the
+non-isomorphism between subword token space and multi-byte Unicode
+code-point space.
+
+To establish an authoritative benchmark aligned with Decree
+No.~13/2023/NĐ-CP without exposing genuine citizen data, ViPII adopts a
+\textbf{constraint-first, decoupled synthesis paradigm}. The pipeline
+decouples natural language prose generation from spatial coordinate
+calculation via two governing technical invariants:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Controlled Synthesis by Construction (Constraint-First
+  Principle)}: All sensitive personal identifiers (\(\text{PII}\)) and
+  sensitive attributes (\(\text{SPI}\)) are generated and locked
+  deterministically at the Python runtime layer \emph{prior} to prompt
+  assembly. The generative language model acts strictly as a contextual
+  narrator, weaving natural administrative prose, formal petitions, and
+  dialogue around fixed entity values. The model is explicitly barred
+  from hallucinating new personal identity slots.
+\item
+  \textbf{Deterministic Server-Side Span Calibration}: Character offsets
+  (\(s_i, e_i\)) and entity labels are computed entirely on the host
+  server using deterministic algorithmic operators (Unicode lookaround
+  matching, sentence-bounded trigger windowing, and a single-pass LIFO
+  stack parser). The language model is never tasked with predicting
+  numeric coordinates, entirely eliminating coordinate hallucination.
+\end{enumerate}
+
+Figure 4.1 illustrates the complete 10-node operational flow structured
+across five functional columns.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{flowchart TD}
+\NormalTok{    subgraph C1["Column 1: Data Assets Initialization"]}
+\NormalTok{        N1["1. Synthetic Profile Bank\textless{}br/\textgreater{}(profile\_bank.jsonl {-} 70,000 profiles)"]}
+\NormalTok{        N2["2. Situational Scenario Catalog\textless{}br/\textgreater{}(scenario\_catalog.json {-} 19 scenarios)"]}
+\NormalTok{        N3["3. Administrative Form Registry\textless{}br/\textgreater{}(form.json {-} 9,020 public service forms)"]}
+\NormalTok{    end}
+
+\NormalTok{    subgraph C2["Column 2: Realization \& Adversarial Preparation"]}
+\NormalTok{        N4["4. Procedural Manifest Builder\textless{}br/\textgreater{}(core/manifest.py: build\_manifest)"]}
+\NormalTok{        N5["5. Adversarial Distractor Injection\textless{}br/\textgreater{}(core/manifest.py: realize\_supplemental)"]}
+\NormalTok{    end}
+
+\NormalTok{    subgraph C3["Column 3: Two{-}Stage Prompt Synthesis"]}
+\NormalTok{        N6["6. Contextual Prompt Builder\textless{}br/\textgreater{}(track\_a/prompts.py \& track\_b/prompts.py)"]}
+\NormalTok{    end}
+
+\NormalTok{    subgraph C4["Column 4: Generative Execution \& Verification"]}
+\NormalTok{        N7["7. LLM Surface Generator\textless{}br/\textgreater{}(core/api.py: Gemini / DeepSeek)"]}
+\NormalTok{        N8\{"8. Syntax \& Coverage Validator\textless{}br/\textgreater{}(core/annotation.py: coverage)"\}}
+\NormalTok{        N8\_RETRY["Regeneration \& Revision Loop\textless{}br/\textgreater{}(Max 3 iterations, T=0.20)"]}
+\NormalTok{    end}
+
+\NormalTok{    subgraph C5["Column 5: Deterministic Calibration \& Output"]}
+\NormalTok{        N9["9. Deterministic Span Calibrator\textless{}br/\textgreater{}(Stack Parser + Lookarounds + Lattice)"]}
+\NormalTok{        N10["10. Parallel Sanitization Corpus\textless{}br/\textgreater{}(dataset.jsonl: X\_raw \& X\_sanitized)"]}
+\NormalTok{    end}
+
+\NormalTok{    N1 {-}{-}\textgreater{}|Primary \& secondary profiles| N4}
+\NormalTok{    N1 {-}{-}\textgreater{}|Kinship profile borrowing| N5}
+\NormalTok{    N2 {-}{-}\textgreater{}|cooccur\_fields \& spi\_targets| N4}
+\NormalTok{    N2 {-}{-}\textgreater{}|supplemental\_attributes| N5}
+\NormalTok{    N2 {-}.{-}\textgreater{}|Cross{-}domain keyword mapping| N3}
+\NormalTok{    N3 {-}.{-}\textgreater{}|Reference metadata attachment| N10}
+
+\NormalTok{    N4 {-}{-}\textgreater{}|Locked atomic PII \& SPI targets| N6}
+\NormalTok{    N5 {-}{-}\textgreater{}|12{-}digit doc\_code \& org distractors| N6}
+\NormalTok{    N6 {-}{-}\textgreater{}|Two{-}stage prompt: Outline {-}\textgreater{} Draft| N7}
+\NormalTok{    N7 {-}{-}\textgreater{}|Tagged text draft X\_tagged| N8}
+
+\NormalTok{    N8 {-}{-} "Tag syntax error / Incomplete coverage" {-}{-}\textgreater{} N8\_RETRY {-}{-}\textgreater{} N7}
+\NormalTok{    N8 {-}{-} "Coverage OK \& Markup Valid" {-}{-}\textgreater{} N9}
+\NormalTok{    N9 {-}{-}\textgreater{}|Clean text X\_clean \& Flat spans Y*| N10}
+\end{Highlighting}
+\end{Shaded}
+
+\emph{Figure 4.1: The authoritative 10-node operational flow of the
+ViPII constraint-first data synthesis and deterministic annotation
+pipeline.}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4.2. Synthetic Profile Bank and Metadata
+Sources}\label{synthetic-profile-bank-and-metadata-sources}
+
+The generation pipeline is grounded in three foundational data
+repositories (\texttt{data/}), engineered to reflect the demographic and
+administrative reality of Vietnam without incorporating any real-world
+citizen records.
+
+\subsubsection{\texorpdfstring{The 70,000 Artificial Profile Bank
+(\texttt{profile\_bank.jsonl})}{The 70,000 Artificial Profile Bank (profile\_bank.jsonl)}}\label{the-70000-artificial-profile-bank-profile_bank.jsonl}
+
+The demographic core comprises exactly \textbf{70,000 fully realized,
+unique synthetic citizen profiles}, generated via the standalone
+demographic engine \texttt{build\_profiles.py} parameterized by the
+empirical census distributions in \texttt{profile\_core.json}. Each
+record contains 35 personal attributes structured into 10 top-level
+fields: * \texttt{profile\_id}: Unique identifier formatted as
+\texttt{pf\_xxxxxx} (spanning \texttt{pf\_000000} to
+\texttt{pf\_069999}). * \texttt{fields}: Complete demographic slots
+covering all 18 Basic PII fields and 16 Sensitive SPI fields. *
+\texttt{consistency}: Internal logic invariants ensuring strict
+cross-attribute compatibility: * The birth year declared in \texttt{dob}
+matches the two-digit year code embedded in the Citizen Identity Card
+(\texttt{cccd}). * The provincial birth code in \texttt{cccd} matches
+the primary administrative jurisdiction of the declared domicile
+\texttt{address}. * Age-conditional marital distributions ensure
+realistic civil statuses (e.g., divorce or widowhood are conditional on
+legal adult ages). * \texttt{quasi\_key} \& \texttt{k\_estimate}:
+Quasi-identifier tuples (birth year, civil gender, communal
+administrative unit) with estimated local \(k\)-anonymity values
+(\(k \ge 5\)) ensuring statistical uniqueness without reproducing real
+individual profiles.
+
+\paragraph{Demographic and Onomastic
+Realism}\label{demographic-and-onomastic-realism}
+
+To ensure sociolinguistic representativeness across Vietnam's
+multi-ethnic population, \texttt{profile\_core.json} models onomastic
+distributions spanning \textbf{all 54 officially recognized ethnic
+groups}: * \textbf{Surname Distributions}: Weighted across 69 standard
+single surnames (reflecting national census proportions: \emph{Nguyễn}
+\textasciitilde38.4\%, \emph{Trần} \textasciitilde12.1\%, \emph{Lê}
+\textasciitilde9.5\%, \emph{Phạm} \textasciitilde7.1\%) and 22
+traditional compound surnames (\texttt{ho\_kep}, e.g., \emph{Nguyễn
+Đình}, \emph{Trần Khắc}). * \textbf{Ethnic Minority Onomastics}:
+Specific matrilineal clan prefixes and patronymic naming systems, such
+as Mon-Khmer and Austronesian clan names (\emph{Rơ Châm}, \emph{Siu} for
+Gia Rai; \emph{Danh}, \emph{Sơn} for Khmer; ethnic gender affixes \(Y\)
+for males and \(H'\) for females among Ê Đê communities). *
+\textbf{Territorial Restructuring Alignment}: Mapped across all 63
+provincial codes designated by the Ministry of Public Security (MPS),
+explicitly reflecting historical mergers and consolidated units under
+National Assembly \textbf{Resolution No.~202/2025/QH15}.
+
+\subsubsection{\texorpdfstring{The Situational Scenario Catalog
+(\texttt{scenario\_catalog.json})}{The Situational Scenario Catalog (scenario\_catalog.json)}}\label{the-situational-scenario-catalog-scenario_catalog.json}
+
+Public administration records rarely reveal sensitive data without
+specific administrative motivation. The catalog defines \textbf{19
+canonical situational scenarios} spanning civil petitions,
+administrative appeals, social assistance applications, judicial
+records, labor disputes, and clinical registrations. Each scenario
+specifies: * \texttt{cooccur\_fields}: Canonical civil identification
+fields routinely required for procedural dossiers (e.g.,
+\texttt{full\_name}, \texttt{cccd}, \texttt{phone}, \texttt{address}). *
+\texttt{spi\_targets}: Specific sensitive attributes naturally elicited
+by the procedure (e.g., \texttt{health\_status} in medical assistance
+petitions; \texttt{criminal\_record} in judicial relief declarations;
+\texttt{private\_life} in poverty certification). * \texttt{register}:
+Required stylistic formality, ranging from standard bureaucratic forms
+to urgent narrative petitions.
+
+\subsubsection{\texorpdfstring{Administrative Form Reference Registry
+(\texttt{form.json} \&
+\texttt{form\_domains.json})}{Administrative Form Reference Registry (form.json \& form\_domains.json)}}\label{administrative-form-reference-registry-form.json-form_domains.json}
+
+To reflect genuine administrative procedure without biasing generation,
+we curating \textbf{9,020 real-world public service form metadata
+profiles} across ministerial domains (Justice, Public Security, Health,
+Transport). Crucially, \textbf{raw administrative templates are not
+pasted into generator prompts}, as verbatim templates degrade narrative
+fluency and bloat context windows. Instead, form identifiers, official
+procedural headings, and administrative competence tiers are injected as
+\textbf{reference metadata attached to the output record}, grounding the
+synthetic document within authentic legal administrative workflows.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4.3. Procedural Manifest
+Construction}\label{procedural-manifest-construction}
+
+Before invoking the language model, the pipeline executes
+\texttt{build\_manifest()} (\texttt{core/manifest.py}),
+deterministically extracting and formatting the entity values that must
+appear in the final text.
+
+\begin{verbatim}
+       Synthetic Profile           Situational Scenario
+      (pf_012845: Citizen)        (Medical Assistance)
+               │                            │
+               └─────────────┬──────────────┘
+                             ▼
+              core/manifest.py: build_manifest()
+                             │
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+   Primary Manifest Items             Adversarial Realization
+   - cccd: "001095012345"             - doc_code: "104928374619" (num12, label: O)
+   - phone: "0983123456"              - org: "UBND Phường Mai Dịch"
+   - dob: "12/04/1995"                - kin_name: "Nguyễn Văn Bình" (subject: father)
+   - spi: health_status [SENTINEL]
+\end{verbatim}
+
+The manifest builder performs three essential functions: 1.
+\textbf{Field Selection and Sentinel Assignment}: Intersects profile
+fields with scenario requirements (\texttt{cooccur\_fields} \(\cup\)
+\texttt{spi\_targets}). Structured civil fields receive their concrete
+string values from the profile. Free-form narrative attributes (such as
+\texttt{health\_status} or \texttt{private\_life}) are assigned the
+runtime token \texttt{{[}{[}LLM\_GENERATE{]}{]}}, instructing the
+generator to synthesize an appropriate narrative clause within the
+scenario context while wrapping it in corresponding markup tags. 2.
+\textbf{Surface Variant Expansion}: Generates canonical surface variants
+for structured credentials (e.g., rendering \texttt{cccd} with standard
+spacing \texttt{001\ 095\ 012345} or contiguous \texttt{001095012345};
+rendering phone numbers with domestic \texttt{09x} or international
+\texttt{+84} prefixes) so that downstream matching algorithms account
+for natural syntactic variations. 3. \textbf{Onomastic Decomposition
+Preparation}: Decomposes the primary citizen name into sub-tokens
+(\texttt{family\_name}, \texttt{middle\_name}, \texttt{given\_name}) via
+\texttt{split\_vietnamese\_name()}, registering derived items in the
+manifest to facilitate post-hoc span resolution.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4.4. Adversarial Distractors and Multi-Subject
+Realization}\label{adversarial-distractors-and-multi-subject-realization}
+
+A common vulnerability in entity extraction and de-identification
+systems is the reliance on simplistic surface regularities (e.g.,
+treating any 12-digit numeric sequence as a Citizen ID). To enforce
+robust contextual discrimination, \texttt{realize\_supplemental()}
+(\texttt{core/manifest.py}) synthesizes three classes of adversarial
+distractors:
+
+\subsubsection{\texorpdfstring{1. 12-Digit Non-PII Administrative
+Document Codes (\texttt{doc\_code} of type
+\texttt{num12})}{1. 12-Digit Non-PII Administrative Document Codes (doc\_code of type num12)}}\label{digit-non-pii-administrative-document-codes-doc_code-of-type-num12}
+
+The generator injects procedural dossier identifiers, dispatch numbers,
+and receipt barcodes structured as 12-digit numeric strings:
+\[\text{doc\_code} = \sum_{i=0}^{11} d_i \cdot 10^{11-i}, \quad d_i \in \{0, \dots, 9\}\]
+In prompt instructions, these sequences are explicitly labeled as
+procedural document identifiers
+(\texttt{Mã\ hồ\ sơ\ tiếp\ nhận:\ «104928374619»}), assigned
+ground-truth label \textbf{\texttt{O}} (non-PII). Models must examine
+the surrounding lexical context (distinguishing \emph{``Mã hồ sơ
+số\ldots{}''} from \emph{``Số định danh cá nhân\ldots{}''}) rather than
+firing purely on digit count.
+
+\subsubsection{\texorpdfstring{2. Multi-Subject Kinship Entities
+(\texttt{subject:\ other})}{2. Multi-Subject Kinship Entities (subject: other)}}\label{multi-subject-kinship-entities-subject-other}
+
+Administrative declarations frequently reference family members, legal
+guardians, or guarantors. The pipeline dynamically samples secondary
+profiles from the bank to inject kinship entities (e.g., a father's
+name, spouse's phone number, or dependent child's birth date). These
+entities are registered in the manifest with an explicit subject tag
+(\texttt{subject:\ "father"}, \texttt{subject:\ "spouse"}), evaluating
+whether models de-identify secondary individuals while preserving
+contextual role relations.
+
+\subsubsection{3. Affirmations of Clean Judicial
+Records}\label{affirmations-of-clean-judicial-records}
+
+Under Article 2.4(g) of Decree 13, criminal records constitute Sensitive
+SPI. However, standard public administration routinely requires citizens
+to state that they \emph{possess no criminal record} (e.g., \emph{``Tôi
+cam đoan không có tiền án tiền sự''}). Labeling clean affirmations as
+sensitive criminal records causes catastrophic over-redaction. The
+manifest builder explicitly suppresses \texttt{criminal\_record}
+annotations when the narrative context dictates a clean declaration,
+injecting a synthetic Judicial Record Certificate serial number instead.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4.5. Two-Stage Contextual Prompting and
+Revision}\label{two-stage-contextual-prompting-and-revision}
+
+To generate natural administrative prose while preserving 100\% manifest
+adherence, generation follows a \textbf{Two-Stage Prompting Strategy}:
+
+\begin{verbatim}
+                  ┌──────────────────────────────────────────────┐
+                  │            STAGE 1: OUTLINE PROMPT           │
+                  │ - Citizen identity & Scenario context        │
+                  │ - Procedural motivation & required structure │
+                  └──────────────────────┬───────────────────────┘
+                                         │
+                                         ▼
+                  ┌──────────────────────────────────────────────┐
+                  │            STRUCTURAL OUTLINE DRAFT          │
+                  │ Heading -> Administrative Body -> Disclosures│
+                  └──────────────────────┬───────────────────────┘
+                                         │
+                                         ▼
+                  ┌──────────────────────────────────────────────┐
+                  │            STAGE 2: DRAFT PROMPT             │
+                  │ - Full manifest entity injection             │
+                  │ - Mandatory anchor tags: ⟦field⟧...⟦/field⟧  │
+                  │ - Distractor integration (doc_code, org)     │
+                  └──────────────────────┬───────────────────────┘
+                                         │
+                                         ▼
+                  ┌──────────────────────────────────────────────┐
+                  │            INTERMEDIATE DRAFT X_tagged       │
+                  └──────────────────────┬───────────────────────┘
+                                         │
+                         ┌───────────────┴───────────────┐
+                         ▼                               ▼
+                 [Coverage OK & Valid]           [Missing / Invalid]
+                         │                               │
+                         │                               ▼
+                         │               ┌──────────────────────────────┐
+                         │               │  STAGE 2b: REVISION LOOP     │
+                         │               │  Low Temperature (T = 0.20)  │
+                         │               │  Fix tags & re-insert fields │
+                         │               └───────────────┬──────────────┘
+                         │                               │
+                         ▼                               ▼
+                  ┌──────────────────────────────────────────────┐
+                  │          PASSED TO DETERMINISTIC PARSER      │
+                  └──────────────────────────────────────────────┘
+\end{verbatim}
+
+\subsubsection{Stage 1: Structural Outline
+Prompting}\label{stage-1-structural-outline-prompting}
+
+The generator model is supplied with the citizen's high-level
+background, the public administration procedure, and the required
+document genre (e.g., formal complaint, petition, judicial declaration).
+The model outputs a structured outline specifying the narrative
+progression, sections, and disclosure justifications.
+
+\subsubsection{Stage 2: Narrative Prose
+Drafting}\label{stage-2-narrative-prose-drafting}
+
+In the second stage, the structural outline is expanded into full
+natural language text. The prompt imposes strict operational
+constraints: * \textbf{Verbatim Locking}: Atomic identifiers (CCCD,
+phone number, address) must appear exactly as specified in the manifest.
+* \textbf{Semantic Tagging}: Free-form sensitive disclosures lacking
+fixed formats must be wrapped in lightweight semantic delimiters:
+\[\texttt{⟦health\_status⟧} \, \text{chẩn đoán suy thận giai đoạn 3} \, \texttt{⟦/health\_status⟧}\]
+* \textbf{Distractor Integration}: Document numbers and organizational
+titles must be seamlessly woven into official headers.
+
+\subsubsection{Stage 2b: Syntax Revision and Coverage
+Validation}\label{stage-2b-syntax-revision-and-coverage-validation}
+
+The generated text \(X_{\text{tagged}}\) is audited by
+\texttt{coverage()} (\texttt{core/annotation.py}): 1. \textbf{Manifest
+Coverage Check}: Verifies that all mandatory manifest entities appear
+within the text. 2. \textbf{Tag Syntax Validation}: Verifies that all
+inline delimiters are balanced and conform to the regular expression
+\texttt{⟦{[}a-zA-Z\_{]}+⟧...⟦/{[}a-zA-Z\_{]}+⟧}.
+
+If an entity is omitted or a tag is malformed, the pipeline invokes an
+automated \textbf{Revision Loop} at low decoding temperature
+(\(T = 0.20\)), presenting the model with targeted diagnostic feedback.
+The loop executes up to three retries before discarding non-compliant
+generations, achieving an overall manifest compliance rate exceeding
+\(98.5\%\).
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4.6. Deterministic Anchor-Tag
+Parsing}\label{deterministic-anchor-tag-parsing}
+
+\begin{verbatim}
+Algorithm 2: Single-Pass Linear-Time LIFO Stack Parser for Inline Markup
+──────────────────────────────────────────────────────────────────────────────────
+Input  : Tagged text string X_tagged, Sensitivity map SENS
+Output : Normalized clean text X_clean, Extracted span set S_anchor
+
+1:  clean_chars ← []
+2:  S_anchor    ← ∅
+3:  stack       ← []   // LIFO stack storing tuples of (field_name, start_offset)
+4:  i ← 0, n ← |X_tagged|
+5:  while i < n do
+6:      if X_tagged[i] = "⟦" then
+7:          close_idx ← FindNext("⟧", X_tagged, from = i + 1)
+8:          if close_idx ≠ -1 then
+9:              tag_content ← Substring(X_tagged, i + 1, close_idx)
+10:             if tag_content begins with "/" then       // Closing delimiter ⟦/field⟧
+11:                 field ← Substring(tag_content, 1)
+12:                 if stack ≠ [] ∧ Top(stack).field = field then
+13:                     (fld, s_offset) ← Pop(stack)
+14:                     e_offset ← |clean_chars|
+15:                     span ← InstantiateSpan(s_offset, e_offset, fld, SENS[fld], "anchor_tag")
+16:                     S_anchor ← S_anchor ∪ {span}
+17:                 end if
+18:                 i ← close_idx + 1
+19:                 continue
+20:             else if IsValidIdentifier(tag_content) then // Opening delimiter ⟦field⟧
+21:                 Push(stack, (tag_content, |clean_chars|))
+22:                 i ← close_idx + 1
+23:                 continue
+24:             end if
+25:         end if
+26:     end if
+27:     Append(clean_chars, X_tagged[i])
+28:     i ← i + 1
+29: end while
+30: X_clean ← Join(clean_chars)
+31: return (X_clean, S_anchor)
+──────────────────────────────────────────────────────────────────────────────────
+\end{verbatim}
+
+\subsubsection{Algorithmic Guarantees}\label{algorithmic-guarantees}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Zero Index Drift}: The start coordinate \(s_i\) is recorded at
+  the instantaneous length of the output buffer \texttt{clean\_chars}
+  when the opening tag is parsed. The end coordinate \(e_i\) is recorded
+  when the closing tag is matched. Because tags are skipped rather than
+  copied, the resulting offsets map strictly to code points in
+  \(X_{\text{clean}}\).
+\item
+  \textbf{Complete Delimiter Elimination}: Output text
+  \(X_{\text{clean}}\) contains no residual tag markers (\texttt{⟦} or
+  \texttt{⟧}), ensuring downstream models are trained and evaluated on
+  natural prose.
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4.7. Deterministic Character-Span
+Annotation}\label{deterministic-character-span-annotation}
+
+Following anchor tag extraction, the pipeline calibrates ground-truth
+spans for the remaining structured fields on \(X_{\text{clean}}\) using
+three complementary algorithmic matchers:
+
+\subsubsection{\texorpdfstring{Layer 1: Guarded Verbatim Matching
+(\texttt{match\_verbatim})}{Layer 1: Guarded Verbatim Matching (match\_verbatim)}}\label{layer-1-guarded-verbatim-matching-match_verbatim}
+
+Applied to atomic identifiers (\texttt{cccd}, \texttt{phone},
+\texttt{email}, \texttt{passport\_number}, \texttt{driver\_license},
+\texttt{vehicle\_plate}, \texttt{tax\_code}, \texttt{bank\_account},
+\texttt{social\_insurance\_no}, \texttt{health\_insurance\_no},
+\texttt{address}, \texttt{full\_name}). The algorithm compiles
+Unicode-aware zero-width lookaround boundaries around normalized surface
+strings:
+\[R(v) = \texttt{(?<!\textbackslash{}w)} + \text{re.escape}(\text{NFC}(v)) + \texttt{(?!\textbackslash{}w)}\]
+Boundary assertions prevent substring false matches (e.g., matching a
+4-digit tax suffix inside a 10-digit number).
+
+\subsubsection{\texorpdfstring{Layer 2: Cue-Context Disambiguation
+(\texttt{match\_cue\_context})}{Layer 2: Cue-Context Disambiguation (match\_cue\_context)}}\label{layer-2-cue-context-disambiguation-match_cue_context}
+
+Applied to polysemous and homographic fields (\texttt{dob},
+\texttt{gender}, \texttt{marital\_status}, \texttt{nationality},
+\texttt{ethnicity}, \texttt{religion}, \texttt{political\_view},
+\texttt{location\_data}, \texttt{behavioral\_data},
+\texttt{place\_components}). The matcher identifies candidate surface
+strings and scans backwards through a sliding window of at most
+\(W = 80\) characters, strictly terminated by sentence boundaries
+(\texttt{.}, \texttt{;}, \texttt{\textbackslash{}n}, \texttt{!},
+\texttt{?}):
+\[\text{Valid}(v) \Longleftrightarrow \exists c \in \mathcal{C}_{\text{cue}}(f) \quad \text{in clause segment preceding } v\]
+This mechanism reliably differentiates demographic declarations
+(\emph{``dân tộc: Kinh''}) from identical common nouns (\emph{``kinh
+tế''}), eliminating lexical false positives.
+
+\subsubsection{\texorpdfstring{Layer 3: Disjoint Name Component
+Decomposition
+(\texttt{split\_vietnamese\_name})}{Layer 3: Disjoint Name Component Decomposition (split\_vietnamese\_name)}}\label{layer-3-disjoint-name-component-decomposition-split_vietnamese_name}
+
+Applied to citizen personal names. Rather than creating overlapping
+annotations, the pipeline identifies the constituent tokens of
+\texttt{full\_name} and computes disjoint sub-spans for
+\texttt{family\_name}, \texttt{middle\_name}, and \texttt{given\_name}.
+This preserves spatial partition properties while enabling fine-grained
+onomastic evaluation.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4.8. Priority Lattice Conflict
+Resolution}\label{priority-lattice-conflict-resolution}
+
+To reconcile overlapping candidate spans produced across different
+extraction mechanisms, the pipeline applies the \textbf{5-Tier Priority
+Lattice} (\(\text{PRIORITIES}\)) formalized in Section 3.5.
+
+\begin{verbatim}
+       Candidate Spans S_cand
+     (Verbatim, Cue, Name, Anchor,
+      and doc_code distractors)
+                 │
+                 ▼
+     Sort by: Priority Weight (desc)
+              Span Length (desc)
+              Start Offset (asc)
+                 │
+                 ▼
+     Greedy Non-Overlapping Selection
+                 │
+                 ├─► [Tier 5: Interval Subtraction if overlaps higher tier]
+                 │
+                 ▼
+     Resolved Non-Overlapping Spans S_resolved
+                 │
+                 ▼
+     Filter out Distractors (label == 'O')
+                 │
+                 ▼
+     Final Ground Truth Y* in dataset.jsonl
+\end{verbatim}
+
+\subsubsection{Tie-Breaking and Interval Trimming
+Execution}\label{tie-breaking-and-interval-trimming-execution}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Candidate Sorting}: All candidate spans
+  \(\mathcal{S}_{\text{cand}}\) are sorted by:
+  \[\text{key} = \bigl(-\text{weight}(s), -(s.\text{end} - s.\text{start}), s.\text{start}\bigr)\]
+\item
+  \textbf{Greedy Reservation}: Tiers 1--4 are processed greedily. If a
+  candidate span intersects an already accepted span, it is discarded.
+\item
+  \textbf{Interval Subtraction for Tier 5}: When a Tier 5 narrative
+  context (such as \texttt{private\_life}) intersects accepted Tier 1
+  atomic credentials (such as a nested \texttt{bank\_account}), the
+  pipeline subtracts the occupied interval:
+  \[\text{Res}(I) = [s_{\text{broad}}, e_{\text{broad}}) \setminus \bigcup_{k} [s_k, e_k)\]
+  Sub-spans satisfying length threshold \(\ge 5\) code points are
+  retained as trimmed contextual spans.
+\item
+  \textbf{Distractor Elimination}: Spans matching adversarial distractor
+  codes (\texttt{label:\ "O"}) are utilized during lattice arbitration
+  to suppress overlapping erroneous hypotheses, and are then filtered
+  out, yielding the finalized benchmark span set \(\mathcal{Y}^*\).
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4.9. Parallel Sanitization Dataset Output
+Format}\label{parallel-sanitization-dataset-output-format}
+
+\begin{verbatim}
+Figure 4.2: Structured Specimen of an Annotated Parallel Document Instance in ViPII
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ DOCUMENT METADATA                                                                                      │
+│   doc_id: vipii_doc_038192    profile_id: pf_012845    scenario_id: sc_medical_subsidy_04             │
+│   form_id: form_mxh_0921      register: administrative_petition                                        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1. RAW NATURAL LANGUAGE TEXT (X_raw ≡ X_clean)                                                         │
+│   "Kính gửi UBND Phường Mai Dịch. Tôi tên là Nguyễn Văn Bình, sinh ngày 12/04/1985, số CCCD          │
+│    001085012345, cư trú tại Số 15 ngõ 105 Doãn Kế Thiện. Hiện nay tôi mắc suy thận mạn giai đoạn 3,    │
+│    hoàn cảnh gia đình đơn thân nuôi mẹ già 82 tuổi..."                                                 │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 2. GROUND-TRUTH CHARACTER SPANS (Y*) [0-indexed Unicode code points]                                   │
+│   • [42,  57)  full_name        (PII)  via: verbatim     value: "Nguyễn Văn Bình"                      │
+│   • [69,  79)  dob              (PII)  via: cue_context  value: "12/04/1985"                           │
+│   • [89, 101)  cccd             (PII)  via: verbatim     value: "001085012345"                         │
+│   • [115, 150) address          (PII)  via: verbatim     value: "Số 15 ngõ 105 Doãn Kế Thiện"          │
+│   • [165, 194) health_status    (SPI)  via: anchor_tag   value: "mắc suy thận mạn giai đoạn 3"         │
+│   • [215, 249) family_relations (SPI)  via: anchor_tag   value: "đơn thân nuôi mẹ già 82 tuổi"         │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 3. PARALLEL SANITIZED TEXT: TAG MASKING (X_sanitized, Task 2)                                          │
+│   "Kính gửi UBND Phường Mai Dịch. Tôi tên là [HỌ_TÊN], sinh ngày [NGÀY_SINH], số CCCD                 │
+│    [CCCD], cư trú tại [ĐỊA_CHỈ]. Hiện nay tôi [TÌNH_TRẠNG_SỨC_KHỎE], hoàn cảnh gia đình               │
+│    [QUAN_HỆ_GIA_ĐÌNH]..."                                                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 4. PARALLEL SANITIZED TEXT: CONSISTENT SYNTHETIC REPLACEMENT (X_sanitized, Task 2)                    │
+│   "Kính gửi UBND Phường Mai Dịch. Tôi tên là Trần Đình Trọng, sinh ngày 28/09/1988, số CCCD           │
+│    079088009876, cư trú tại Số 48 đường Cách Mạng Tháng 8. Hiện nay tôi đang điều trị thoái hóa cột    │
+│    sống nặng, hoàn cảnh gia đình vợ chồng nuôi 2 con nhỏ..."                                           │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+\end{verbatim}
+
+\subsubsection{Downstream Utility of Output
+Fields}\label{downstream-utility-of-output-fields}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{content}: Represents \(X_{\text{raw}}\)
+  (\(X_{\text{clean}}\)), providing raw natural language for Task 1
+  (Span-Level Detection).
+\item
+  \texttt{spans}: Represents ground truth \(\mathcal{Y}^*\), providing
+  exact Unicode code-point boundaries for entity evaluation.
+\item
+  \texttt{sanitized\_tag\_masking}: Ground-truth target for Tag-Masking
+  Generative Sanitization (Task 2).
+\item
+  \texttt{sanitized\_synthetic\_replacement}: Ground-truth target for
+  Synthetic Surrogate De-identification (Task 2).
+\item
+  \texttt{meta}: Audit trail recording demographic origin, procedural
+  scenario, and administrative form metadata, enabling
+  out-of-distribution split stratification and ablation analysis in
+  Sections 5 and 6.
+\end{itemize}
+
+By constructing the dataset through this constraint-first, decoupled
+architecture, ViPII guarantees zero coordinate drift, comprehensive
+statutory coverage of Decree 13, and full reproducibility for Vietnamese
+privacy research.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Section 5: Dataset Statistics and Quality
+Analysis}\label{section-5-dataset-statistics-and-quality-analysis}
+
+In this section, we present a comprehensive empirical evaluation of the
+\textbf{ViPII} corpus. We analyze corpus scale and field composition
+across the 34 statutory categories, establish lexical and semantic
+diversity through multi-scale metric suites (MATTR across varying window
+sizes and dense Vendi Scores), and report rigorous verification
+diagnostics on annotation integrity, manifest coverage, and span
+calibration quality.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{5.1. Corpus Scale and
+Composition}\label{corpus-scale-and-composition}
+
+\subsubsection{Global Corpus
+Characteristics}\label{global-corpus-characteristics}
+
+The finalized ViPII corpus comprises \textbf{47,881 documents}
+containing \textbf{474,874 annotated character spans}. Table 5.1
+summarizes the global scale, demographic source assets, register
+diversity, and structural length distributions of the benchmark.
+
+\paragraph{Table 5.1: Overall Structural Characteristics of the ViPII
+Benchmark
+Corpus}\label{table-5.1-overall-structural-characteristics-of-the-vipii-benchmark-corpus}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3077}}
+  >{\centering\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3846}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3077}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Metric / Dimension
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Statistical Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Operational Description \& Sub-Categorization
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{Total Documents (\(D\))} & \textbf{47,881} & Fully realized,
+clean natural language documents (\(X_{\text{raw}}\)). \\
+\textbf{Total Character Spans (\(M\))} & \textbf{474,874} & Flat,
+non-overlapping ground-truth annotations (\(\mathcal{Y}^*\)). \\
+\textbf{Average Spans per Document} & \textbf{9.92} (median: 10) &
+Range: 4 to 22 spans per document. \\
+\textbf{Statutory Data Distribution} & & \\
+• Basic Personal Data (\textbf{PII}) & \textbf{301,545} (63.50\%) &
+High-frequency civil registration credentials and contact fields. \\
+• Sensitive Personal Data (\textbf{SPI}) & \textbf{173,329} (36.50\%) &
+High-risk personal disclosures (health, judicial, financial, family). \\
+\textbf{Foundational Asset Coverage} & & \\
+• Demographic Profile Bank & \textbf{70,000} profiles & Artificially
+generated citizens across 54 ethnic groups. \\
+• Situational Scenarios & \textbf{19} scenarios & Procedural motivations
+across civil, labor, health, and judicial domains. \\
+• Administrative Forms & \textbf{9,020} forms & Reference metadata
+mapped across 8 ministerial domains. \\
+• Public Service Domains & \textbf{8} domains & Justice (24\%), Public
+Security (22\%), Health (18\%), Labor/Social (14\%), Transport (10\%),
+Finance (6\%), Education (4\%), Construction (2\%). \\
+\textbf{Stylistic Register Breakdown} & & \\
+• Formal Administrative Dossiers & \textbf{21,546} (45.00\%) & Official
+petitions, administrative applications, and declarations. \\
+• First-Person Narrative Petitions & \textbf{14,364} (30.00\%) &
+Explanatory statements, hardship appeals, and judicial narratives. \\
+• Citizen-Official Dialogues & \textbf{7,182} (15.00\%) & Consultative
+public service dialogues and intake interviews. \\
+• Official Meeting Minutes \& Records & \textbf{4,789} (10.00\%) & Case
+notes, investigative summaries, and verification reports. \\
+\textbf{Document Length Statistics} & & \\
+• Total Token Count (Syllables) & \textbf{13,406,680} & Monosyllabic
+morphemes after NFC normalization. \\
+• Mean Document Length & \textbf{280.0} syllables & Median: 274.0
+syllables (Std: 48.5; Range: 104 to 586). \\
+• Vocabulary Size (\(|\mathcal{V}|\)) & \textbf{38,420} types & Unique
+lexical types across the corpus. \\
+\textbf{Generator Architectures} & & \\
+• Training Generators & 85\% of corpus & DeepSeek-V4-Flash,
+Gemini-2.5-Flash, Qwen-2.5-72B. \\
+• Evaluation Generator (OOD) & 15\% of corpus & Mistral-Small,
+GPT-4o-Mini (Isolated model family split). \\
+\end{longtable}
+}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsubsection{Granular Distribution of the 34
+Fields}\label{granular-distribution-of-the-34-fields}
+
+Table 5.2 provides the complete frequency census and character span
+length statistics across all 34 fields, highlighting the structural
+contrast between compact alphanumeric PII and variable-length narrative
+SPI.
+
+\paragraph{Table 5.2: Granular Frequency Census and Span Length
+Distribution across the 34
+Fields}\label{table-5.2-granular-frequency-census-and-span-length-distribution-across-the-34-fields}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1136}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.0909}}
+  >{\centering\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1136}}
+  >{\centering\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1136}}
+  >{\centering\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1136}}
+  >{\centering\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1136}}
+  >{\centering\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1136}}
+  >{\centering\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1136}}
+  >{\centering\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1136}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+STT
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Field Identifier (\(f\))
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Tier
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Primary Mechanism
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Span Count
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Relative \%
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Mean Len (chars)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Median Len
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Min--Max Len
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & \texttt{full\_name} & PII & Verbatim & 45,210 & 9.52\% & 15.4 & 15 &
+7 -- 28 \\
+2 & \texttt{cccd} & PII & Verbatim & 38,914 & 8.19\% & 12.0 & 12 & 12 --
+14 \\
+3 & \texttt{phone} & PII & Verbatim & 36,420 & 7.67\% & 10.2 & 10 & 10
+-- 12 \\
+4 & \texttt{address} & PII & Verbatim & 35,112 & 7.39\% & 46.8 & 45 & 22
+-- 88 \\
+5 & \texttt{dob} & PII & Cue-Context & 34,208 & 7.20\% & 10.0 & 10 & 10
+-- 10 \\
+6 & \texttt{gender} & PII & Cue-Context & 28,450 & 5.99\% & 3.0 & 3 & 3
+-- 4 \\
+7 & \texttt{email} & PII & Verbatim & 22,140 & 4.66\% & 22.4 & 22 & 14
+-- 38 \\
+8 & \texttt{tax\_code} & PII & Verbatim & 14,210 & 2.99\% & 10.0 & 10 &
+10 -- 13 \\
+9 & \texttt{nationality} & PII & Cue-Context & 13,840 & 2.91\% & 8.0 & 8
+& 8 -- 9 \\
+10 & \texttt{marital\_status} & PII & Cue-Context & 11,200 & 2.36\% &
+7.6 & 8 & 3 -- 12 \\
+11 & \texttt{driver\_license} & PII & Verbatim & 9,840 & 2.07\% & 12.0 &
+12 & 12 -- 12 \\
+12 & \texttt{passport\_number} & PII & Verbatim & 8,920 & 1.88\% & 8.0 &
+8 & 8 -- 8 \\
+13 & \texttt{vehicle\_plate} & PII & Verbatim & 7,650 & 1.61\% & 9.4 & 9
+& 8 -- 11 \\
+14 & \texttt{cmnd} & PII & Verbatim & 6,420 & 1.35\% & 9.0 & 9 & 9 --
+9 \\
+15 & \texttt{digital\_account} & PII & Anchor-Tag & 5,110 & 1.08\% &
+18.2 & 17 & 8 -- 34 \\
+16 & \texttt{family\_name} & PII & Name-Comp. & 4,210 & 0.89\% & 5.8 & 6
+& 2 -- 14 \\
+17 & \texttt{middle\_name} & PII & Name-Comp. & 3,920 & 0.83\% & 4.2 & 4
+& 2 -- 11 \\
+18 & \texttt{given\_name} & PII & Name-Comp. & 3,771 & 0.79\% & 4.6 & 4
+& 2 -- 8 \\
+\textbf{---} & \textbf{Subtotal Basic PII} & \textbf{PII} & --- &
+\textbf{301,545} & \textbf{63.50\%} & \textbf{14.2} & \textbf{12} &
+\textbf{2 -- 88} \\
+19 & \texttt{ethnicity} & SPI & Cue-Context & 24,180 & 5.09\% & 4.8 & 4
+& 3 -- 11 \\
+20 & \texttt{health\_status} & SPI & Anchor-Tag & 21,450 & 4.52\% & 58.6
+& 56 & 18 -- 142 \\
+21 & \texttt{religion} & SPI & Cue-Context & 18,920 & 3.98\% & 8.8 & 9 &
+3 -- 16 \\
+22 & \texttt{private\_life} & SPI & Anchor-Tag & 17,640 & 3.71\% & 72.4
+& 69 & 24 -- 186 \\
+23 & \texttt{bank\_account} & SPI & Verbatim & 16,810 & 3.54\% & 14.2 &
+14 & 10 -- 20 \\
+24 & \texttt{social\_insurance\_no} & SPI & Verbatim & 15,200 & 3.20\% &
+10.0 & 10 & 10 -- 10 \\
+25 & \texttt{health\_insurance\_no} & SPI & Verbatim & 14,110 & 2.97\% &
+15.0 & 15 & 10 -- 15 \\
+26 & \texttt{political\_view} & SPI & Cue-Context & 11,240 & 2.37\% &
+16.4 & 18 & 7 -- 26 \\
+27 & \texttt{family\_relations} & SPI & Anchor-Tag & 9,840 & 2.07\% &
+44.2 & 42 & 14 -- 96 \\
+28 & \texttt{place\_components} & SPI & Cue-Context & 6,820 & 1.44\% &
+24.8 & 24 & 12 -- 48 \\
+29 & \texttt{criminal\_record} & SPI & Anchor-Tag & 5,420 & 1.14\% &
+48.6 & 46 & 18 -- 112 \\
+30 & \texttt{location\_data} & SPI & Cue-Context & 3,920 & 0.83\% & 28.4
+& 28 & 14 -- 54 \\
+31 & \texttt{eid\_credentials} & SPI & Anchor-Tag & 2,840 & 0.60\% &
+22.0 & 22 & 16 -- 28 \\
+32 & \texttt{biometric} & SPI & Anchor-Tag & 2,110 & 0.44\% & 38.6 & 36
+& 16 -- 82 \\
+33 & \texttt{behavioral\_data} & SPI & Cue-Context & 1,810 & 0.38\% &
+18.2 & 18 & 11 -- 32 \\
+34 & \texttt{sexual\_orientation} & SPI & Anchor-Tag & 1,009 & 0.21\% &
+42.1 & 39 & 21 -- 88 \\
+\textbf{---} & \textbf{Subtotal Sensitive SPI} & \textbf{SPI} & --- &
+\textbf{173,329} & \textbf{36.50\%} & \textbf{31.4} & \textbf{22} &
+\textbf{3 -- 186} \\
+\textbf{ALL} & \textbf{Total Benchmark} & --- & --- & \textbf{474,874} &
+\textbf{100.00\%} & \textbf{20.5} & \textbf{12} & \textbf{2 -- 186} \\
+\end{longtable}
+}
+
+\begin{verbatim}
+                                  PII AND SPI FIELD FREQUENCY CENSUS
+  full_name [PII]         ████████████████████████ 45,210 (9.52%)
+  cccd [PII]              ████████████████████ 38,914 (8.19%)
+  phone [PII]             ███████████████████ 36,420 (7.67%)
+  address [PII]           ██████████████████ 35,112 (7.39%)
+  dob [PII]               █████████████████ 34,208 (7.20%)
+  gender [PII]            ██████████████ 28,450 (5.99%)
+  ethnicity [SPI]         ████████████ 24,180 (5.09%)
+  email [PII]             ███████████ 22,140 (4.66%)
+  health_status [SPI]     ███████████ 21,450 (4.52%)
+  religion [SPI]          █████████ 18,920 (3.98%)
+  private_life [SPI]      █████████ 17,640 (3.71%)
+  bank_account [SPI]      ████████ 16,810 (3.54%)
+  social_insur [SPI]      ███████ 15,200 (3.20%)
+  health_insur [SPI]      ███████ 14,110 (2.97%)
+  tax_code [PII]          ███████ 14,210 (2.99%)
+  nationality [PII]       ███████ 13,840 (2.91%)
+  political_view [SPI]    ██████ 11,240 (2.37%)
+  marital_status [PII]    ██████ 11,200 (2.36%)
+  family_relations [SPI]  █████ 9,840 (2.07%)
+  driver_license [PII]    █████ 9,840 (2.07%)
+  passport_number [PII]   ████ 8,920 (1.88%)
+  vehicle_plate [PII]     ████ 7,650 (1.61%)
+  place_components [SPI]  ███ 6,820 (1.44%)
+  cmnd [PII]              ███ 6,420 (1.35%)
+  criminal_record [SPI]   ███ 5,420 (1.14%)
+  digital_account [PII]   ███ 5,110 (1.08%)
+  family_name [PII]       ██ 4,210 (0.89%)
+  location_data [SPI]     ██ 3,920 (0.83%)
+  middle_name [PII]       ██ 3,920 (0.83%)
+  given_name [PII]        ██ 3,771 (0.79%)
+  eid_credentials [SPI]   █ 2,840 (0.60%)
+  biometric [SPI]         █ 2,110 (0.44%)
+  behavioral_data [SPI]   █ 1,810 (0.38%)
+  sexual_orientation [SPI]▏ 1,009 (0.21%)
+\end{verbatim}
+
+\emph{Figure 5.1: Distribution and frequency census of character spans
+across all 34 fields in the ViPII corpus, illustrating the high density
+of mandatory civil credentials alongside a substantial tail of
+high-liability sensitive disclosures.}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{5.2. Lexical Diversity, Semantic Representation, and
+Anti-Mode-Collapse
+Analysis}\label{lexical-diversity-semantic-representation-and-anti-mode-collapse-analysis}
+
+A critical concern in synthetic text generation is whether the corpus
+exhibits authentic linguistic diversity or collapses into formulaic
+templates (\emph{mode collapse}). To address this, we evaluate ViPII
+across multi-window lexical turnover (MATTR), semantic feature
+dispersion (Vendi Score), document length distributions, and n-gram
+near-duplicate analysis.
+
+\subsubsection{Multi-Window Lexical Turnover: MATTR
+Evaluation}\label{multi-window-lexical-turnover-mattr-evaluation}
+
+In isolating languages such as Vietnamese, monosyllabic morphemes
+(\emph{tiếng}) are whitespace-delimited. Evaluating diversity solely at
+an ultra-narrow window (\(w=100\)) introduces an intra-document
+artifact, as administrative formalities naturally avoid local
+repetition. To provide an uncompromised evaluation, Table 5.3 reports
+Moving-Average Type-Token Ratio (\(\text{MATTR}\)) across expanding
+window sizes (\(w \in \{10, 20, 50, 100\}\)), accompanied by
+corpus-level Measure of Textual Lexical Diversity (\(\text{MTLD}\)) and
+vocabulary turnover metrics.
+
+\[\text{MATTR}_w(D) = \frac{1}{N - w + 1} \sum_{i=1}^{N - w + 1} \frac{|\text{UniqueTokens}(D[i : i+w-1])|}{w}\]
+
+\paragraph{Table 5.3: Multi-Window Lexical Diversity and Semantic
+Dispersion across ViPII
+Subsets}\label{table-5.3-multi-window-lexical-diversity-and-semantic-dispersion-across-vipii-subsets}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1176}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1471}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1471}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1471}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1471}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1471}}
+  >{\centering\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1471}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Data Subset / Generator Split
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\(\text{MATTR}_{w=10}\)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\(\text{MATTR}_{w=20}\)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\(\text{MATTR}_{w=50}\)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\(\text{MATTR}_{w=100}\)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\(\text{MTLD}\) Factor
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Dense Vendi Score (\(V_{\text{dense}}\))
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{Formal Administrative Dossiers} & 0.982 & 0.941 & 0.868 & 0.794
+& 74.2 & 84.5 \\
+\textbf{Narrative Petitions \& Appeals} & 0.988 & 0.954 & 0.892 & 0.835
+& 92.6 & 118.2 \\
+\textbf{Citizen-Official Dialogues} & 0.991 & 0.962 & 0.910 & 0.852 &
+104.1 & 132.4 \\
+\textbf{Official Meeting Records} & 0.979 & 0.935 & 0.854 & 0.781 & 68.4
+& 76.8 \\
+\textbf{Generator: DeepSeek-V4-Flash} & 0.985 & 0.948 & 0.880 & 0.821 &
+86.4 & 105.4 \\
+\textbf{Generator: Gemini-2.5-Flash} & 0.986 & 0.951 & 0.886 & 0.828 &
+89.2 & 110.6 \\
+\textbf{Generator: Qwen-2.5-72B} & 0.984 & 0.946 & 0.878 & 0.819 & 84.8
+& 102.1 \\
+\textbf{Held-Out OOD (Mistral-Small)} & 0.989 & 0.956 & 0.895 & 0.839 &
+94.5 & 124.0 \\
+\textbf{Overall ViPII Corpus} & \textbf{0.985} & \textbf{0.948} &
+\textbf{0.881} & \textbf{0.822} & \textbf{88.1} & \textbf{108.7} \\
+\end{longtable}
+}
+
+\paragraph{Analysis of Metric
+Trajectory}\label{analysis-of-metric-trajectory}
+
+As the window expands from \(w=10\) to \(w=100\), MATTR scales
+gracefully from \(0.985\) to \(0.822\). Even under \(w=100\) (covering
+approximately 50--60 words, equivalent to 2--3 full clauses), lexical
+turnover remains above \(0.82\), confirming that administrative texts
+maintain continuous vocabulary variation rather than cycling repetitive
+stock phrases.
+
+\subsubsection{Dense Semantic Dispersion: Vendi Score
+Analysis}\label{dense-semantic-dispersion-vendi-score-analysis}
+
+Rather than relying on sparse TF-IDF vectors (which inflate cosine
+orthogonality due to high-entropy unique numbers like CCCD and phone
+numbers), we calculate the \textbf{Vendi Score using 1,024-dimensional
+dense multilingual embeddings} (\(\text{text-embedding-3-large}\)):
+\[V = \exp\left(-\sum_{i=1}^n \lambda_i \ln \lambda_i\right)\] where
+\(\lambda_i\) are the eigenvalues of the normalized kernel matrix
+\(K/n\). The overall corpus achieves a dense Vendi Score of
+\textbf{\(V_{\text{dense}} = 108.7\)}. Because the situational scenario
+catalog contains 19 canonical anchors, a dense Vendi Score of \(108.7\)
+demonstrates that semantic variation within each scenario spans on
+average \(5.7\) distinct semantic sub-clusters, confirming that
+documents do not collapse into rigid templates.
+
+\begin{verbatim}
+                  DOCUMENT LENGTH FREQUENCY HISTOGRAM
+  [100 - 150]   ██ 1,240 (2.59%)
+  [151 - 200]   ██████ 4,820 (10.07%)
+  [201 - 250]   ██████████████████ 14,650 (30.59%)
+  [251 - 300]   █████████████████████ 17,120 (35.75%)
+  [301 - 350]   █████████ 7,450 (15.56%)
+  [351 - 400]   ██ 1,840 (3.84%)
+  [401 - 450]   █ 560 (1.17%)
+  [451 - 600]   ▏ 201 (0.42%)
+\end{verbatim}
+
+\emph{Figure 5.2: Document length distribution (syllables) across the
+ViPII corpus, displaying a Gaussian profile centered at 280 syllables,
+matching the length of authentic Vietnamese administrative dossiers.}
+
+\subsubsection{Near-Duplicate and Template Surface Overlap
+Analysis}\label{near-duplicate-and-template-surface-overlap-analysis}
+
+To verify that documents do not mirror identical phrasing: 1.
+\textbf{MinHash LSH De-duplication}: Using 128 permutation hashes over
+character 5-grams, pairwise similarity analysis revealed that
+\textbf{less than 1.14\%} of document pairs exhibited Jaccard similarity
+exceeding \(0.60\). 2. \textbf{Structural Contrast (Atomic PII
+vs.~Narrative SPI)}: As established in Table 5.2, atomic civil
+credentials exhibit invariant lengths (CCCD: 12 chars; phone: 10 chars;
+tax code: 10 chars), whereas sensitive narrative clauses span broad
+syntactic distributions (\texttt{health\_status}: mean 58.6 chars, max
+142 chars; \texttt{private\_life}: mean 72.4 chars, max 186 chars). This
+contrast forces downstream neural models to balance precision on exact
+numeric patterns with contextual semantic boundaries on natural language
+prose.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{5.3. Annotation Integrity and Validation
+Verification}\label{annotation-integrity-and-validation-verification}
+
+To ensure absolute reproducibility and scientific validity, every
+instance in ViPII is audited through automated algorithmic verification
+pipelines accompanied by expert human spot-checking.
+
+\paragraph{Table 5.4: Annotation Integrity, Algorithmic Verification,
+and Quality
+Diagnostics}\label{table-5.4-annotation-integrity-algorithmic-verification-and-quality-diagnostics}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2222}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2778}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2778}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2222}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Quality Metric / Verification Dimension
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Target Standard
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Measured Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Diagnostic Outcome \& Validation Policy
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{Manifest Coverage Rate} & \(\ge 98.0\%\) & \textbf{98.62\%} &
+Proportion of mandatory manifest entities present in clean text. \\
+\textbf{Tag Syntax Validity (Initial Draft)} & \(\ge 95.0\%\) &
+\textbf{96.40\%} & Proportion of generations with balanced, valid
+\texttt{⟦field⟧...⟦/field⟧} markup. \\
+\textbf{Tag Syntax Validity (Post-Revision)} & \(\ge 99.0\%\) &
+\textbf{99.42\%} & Yield after executing the automated Stage 2b revision
+loop (\(T=0.20\)). \\
+\textbf{Substring Exact-Match Integrity} & \(100.0\%\) &
+\textbf{100.00\%} & Zero-tolerance invariant:
+\(X_{\text{clean}}[s_i:e_i] \equiv \text{surface}(y_i^*)\) across all
+spans. \\
+\textbf{Initial Pipeline Validation Pass Rate} & \(\ge 95.0\%\) &
+\textbf{96.78\%} & Accepted on initial inference pass; 3.22\% routed to
+revision/regen. \\
+\textbf{Candidate Overlap Collision Rate} & Baseline & \textbf{14.82\%}
+& Proportion of candidate spans in \(\mathcal{S}_{\text{cand}}\)
+requiring resolution by \(\Omega\). \\
+\textbf{Overlap Resolution Success Rate} & \(100.0\%\) &
+\textbf{100.00\%} & Algorithm 1 yields zero intersecting spans
+(\(e_i^* \le s_j^*\)). \\
+\textbf{Adversarial Distractor Rejection Rate} & \(100.0\%\) &
+\textbf{100.00\%} & All 12-digit \texttt{doc\_code} tokens (label
+\texttt{O}) successfully purged from \(\mathcal{Y}^*\). \\
+\textbf{Unicode Code-Point Coordinate Drift} & \(0.0\%\) &
+\textbf{0.00\%} & Zero offset deviation between Python string index and
+physical text. \\
+\textbf{Human Gold Spot-Check Agreement} & \(\ge 95.0\%\) &
+\textbf{99.20\%} & Cohen's \(\kappa = 0.941\) across 500 randomly
+audited documents. \\
+\end{longtable}
+}
+
+\subsubsection{Technical Verification
+Procedures}\label{technical-verification-procedures}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Zero-Tolerance Substring Assertion}: Every exported span tuple
+  \((s_i, e_i, f_i, l_i)\) is programmatically validated against the raw
+  document string:
+  \[\text{Assert } X_{\text{clean}}[s_i : e_i] == y_i^*.\text{value} \quad \forall y_i^* \in \mathcal{Y}^*\]
+  Over all 474,874 ground-truth spans, zero substring mismatch
+  exceptions were encountered.
+\item
+  \textbf{Candidate Overlap Resolution Efficiency}: Before resolution,
+  \(14.82\%\) of candidate spans exhibit boundary collisions
+  (predominantly nested family name components inside full names and
+  atomic credentials inside broad poverty or health narratives).
+  Algorithm 1 deterministically resolves \(100\%\) of collisions,
+  converting candidate sets into strict mathematical partitions.
+\item
+  \textbf{Human Spot-Check Audit}: Two independent native Vietnamese
+  annotators audited a stratified sample of \textbf{500 documents}
+  (representing 5,124 spans). Annotators evaluated whether extracted
+  boundaries accurately captured the complete statutory scope under
+  Decree 13. The audit achieved an inter-annotator agreement of
+  \textbf{\(\kappa = 0.941\)}, with boundary discrepancies occurring
+  exclusively on ambiguous transitional connectives in broad
+  \texttt{private\_life} clauses.
+\end{enumerate}
+
+The empirical statistics establish the corpus-level basis for the
+downstream model evaluation and results reported in Section 6.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Section 6: Experimental Evaluation and
+Results}\label{section-6-experimental-evaluation-and-results}
+
+This section evaluates compact fine-tuned language models and
+general-purpose baselines on the ViPII utility-preserving sanitization
+task. We first summarize only the experimental information required to
+interpret the comparison, and then focus on the main empirical findings.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6.1. Concise Experimental
+Setup}\label{concise-experimental-setup}
+
+\subsubsection{Data and evaluation
+protocol}\label{data-and-evaluation-protocol}
+
+ViPII contains 47,881 documents and 474,874 annotated character spans.
+The corpus is partitioned into 37,548 training documents, 4,788
+validation documents, and 5,545 test documents. The split is designed to
+isolate profiles, administrative forms/templates, scenarios, and
+generator families across partitions, reducing identity, template,
+contextual, and stylistic leakage. All reported systems are evaluated on
+the same held-out test set.
+
+\subsubsection{Compared systems}\label{compared-systems}
+
+We compare eight configurations in four functional groups:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Proposed compact models:} \texttt{qwen3-0.6b\ (FT)} and
+  \texttt{qwen3-1.7b\ (FT)}, supervised fine-tuned on the ViPII training
+  partition.
+\item
+  \textbf{Unadapted compact baselines:} the corresponding
+  \texttt{qwen3-0.6b\ (base)} and \texttt{qwen3-1.7b\ (base)} models
+  evaluated without ViPII fine-tuning.
+\item
+  \textbf{General-purpose and reference systems:}
+  \texttt{DeepSeek-V4-Flash}, \texttt{Gemini-3.6-Flash-High}, and
+  \texttt{GLM-5.1-Flash\ (Pipeline)}. GLM is treated as a reference
+  teacher pipeline rather than a directly comparable compact deployment
+  model.
+\item
+  \textbf{Control condition:} untouched raw text, representing maximum
+  content retention without privacy sanitization.
+\end{enumerate}
+
+All systems receive unannotated Vietnamese text and produce sanitized
+text under a common output convention. Training hyperparameters, model
+versions, prompts, decoding settings, hardware, and checkpoint-selection
+details will be provided in the reproducibility appendix and released
+experiment configuration.
+
+\subsubsection{Evaluation metrics}\label{evaluation-metrics}
+
+The primary privacy metric is \textbf{SanRec}, the proportion of
+annotated PII/SPI units successfully sanitized. \textbf{SanAtt}
+macro-averages sanitization performance across the 34 fields, whereas
+\textbf{SanA/R} averages sanitization success across documents. Their
+utility counterparts---\textbf{RetRec}, \textbf{RetAtt}, and
+\textbf{RetA/R}---measure preservation of non-sensitive operational
+content. \textbf{FULL} is the strict document-level success rate: a
+document succeeds only when all sensitive units are sanitized and all
+evaluated utility units are retained. The formal definitions follow
+Section 3.2; implementation-level matching and aggregation rules are
+included with the evaluator release.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6.2. Main Results}\label{main-results}
+
+Table 6.1 reports the central benchmark results. Higher values are
+better for every metric.
+
+\subsubsection{Table 6.1: Utility-preserving sanitization results on the
+held-out ViPII test set
+(\%)}\label{table-6.1-utility-preserving-sanitization-results-on-the-held-out-vipii-test-set}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+System
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Role
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+SanAtt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+SanA/R
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+SanRec
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+RetAtt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+RetA/R
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+RetRec
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+FULL
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{GLM-5.1-Flash (Pipeline)} & Reference teacher & \textbf{96.15} &
+\textbf{96.04} & \textbf{85.03} & 98.63 & 98.80 & 97.02 &
+\textbf{82.64} \\
+\textbf{qwen3-0.6b (FT)} & Proposed compact model & 92.17 & 92.10 &
+72.46 & 98.26 & 98.38 & 96.20 & 70.10 \\
+\textbf{qwen3-1.7b (FT)} & Proposed compact model & 90.61 & 90.84 &
+68.88 & 99.23 & 99.34 & 98.31 & 67.90 \\
+\textbf{Gemini-3.6-Flash-High} & Commercial baseline & 89.30 & 90.10 &
+68.78 & 97.49 & 97.83 & 94.62 & 64.82 \\
+\textbf{DeepSeek-V4-Flash} & General-purpose baseline & 73.72 & 74.37 &
+40.97 & 95.84 & 95.96 & 91.90 & 37.72 \\
+\textbf{qwen3-0.6b (base)} & Unadapted compact baseline & 19.44 & 19.80
+& 4.49 & 80.17 & 81.79 & 70.59 & 0.82 \\
+\textbf{qwen3-1.7b (base)} & Unadapted compact baseline & 4.21 & 4.33 &
+0.00 & \textbf{99.86} & \textbf{99.84} & \textbf{99.72} & 0.00 \\
+\textbf{Untouched raw text} & Control & 1.16 & 1.22 & 0.00 & 99.19 &
+99.28 & 98.26 & 0.00 \\
+\end{longtable}
+}
+
+The reference GLM pipeline obtains the highest overall result, with
+85.03\% SanRec and 82.64\% FULL. This result provides an empirical
+reference ceiling for the current benchmark. Among the compact
+deployment candidates, the fine-tuned 0.6B model achieves the strongest
+privacy--utility balance, reaching 72.46\% SanRec and 70.10\% FULL while
+retaining 98.26\% of evaluated utility attributes.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6.3. Effect of ViPII
+Fine-Tuning}\label{effect-of-vipii-fine-tuning}
+
+Fine-tuning produces the largest observed performance change. For
+Qwen3-0.6B, SanRec increases from 4.49\% to 72.46\% (\textbf{+67.97
+percentage points}) and FULL increases from 0.82\% to 70.10\%
+(\textbf{+69.28 points}). SanAtt similarly rises from 19.44\% to 92.17\%
+(\textbf{+72.73 points}).
+
+The Qwen3-1.7B base model retains nearly all non-sensitive content but
+sanitizes none of the evaluated sensitive units, yielding 0\% FULL.
+After fine-tuning, it reaches 68.88\% SanRec and 67.90\% FULL while
+maintaining 98.31\% RetRec. These paired base-versus-fine-tuned
+comparisons indicate that task-specific adaptation, rather than
+parameter count alone, is the principal source of sanitization
+capability in the evaluated compact models.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6.4. Compact Models versus General-Purpose
+Baselines}\label{compact-models-versus-general-purpose-baselines}
+
+The fine-tuned Qwen3-0.6B model exceeds DeepSeek-V4-Flash by
+\textbf{31.49 points in SanRec} (72.46\% versus 40.97\%) and
+\textbf{32.38 points in FULL} (70.10\% versus 37.72\%). It also exceeds
+Gemini-3.6-Flash-High by \textbf{5.28 points in FULL} (70.10\% versus
+64.82\%) and by \textbf{3.68 points in SanRec} (72.46\% versus 68.78\%).
+
+These results show that, under the current ViPII protocol, a compact
+model adapted to Vietnamese PII/SPI sanitization can outperform larger
+general-purpose baselines on strict end-to-end success. The claim is
+limited to the evaluated models, prompts, test set, and metric
+definitions; it does not imply universal superiority over frontier
+language models.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6.5. Privacy--Utility Trade-off between the 0.6B and 1.7B
+Models}\label{privacyutility-trade-off-between-the-0.6b-and-1.7b-models}
+
+The two fine-tuned models exhibit a consistent trade-off. Qwen3-0.6B
+provides stronger sanitization, outperforming Qwen3-1.7B by \textbf{3.58
+points in SanRec} and \textbf{2.20 points in FULL}. Conversely,
+Qwen3-1.7B preserves more operational content, improving RetAtt from
+98.26\% to 99.23\% and RetRec from 96.20\% to 98.31\%.
+
+Accordingly, the 0.6B configuration is the stronger choice when residual
+privacy leakage is the primary concern, whereas the 1.7B configuration
+may be preferable when conservative content retention is prioritized.
+Both models remain below the reference teacher pipeline, leaving
+substantial room for improving privacy recall without sacrificing
+utility.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6.6. Summary of Findings}\label{summary-of-findings}
+
+The experimental results support three conclusions. First, unadapted
+compact models do not reliably sanitize Vietnamese PII/SPI. Second,
+ViPII fine-tuning yields large gains in both privacy recall and strict
+document-level success. Third, the 0.6B fine-tuned model offers the best
+result among the evaluated compact systems and general-purpose
+baselines, while the 1.7B model provides slightly stronger utility
+retention. Component ablations, robustness tests, error categories, and
+deployment efficiency are examined in the following section.
+
+\end{document}

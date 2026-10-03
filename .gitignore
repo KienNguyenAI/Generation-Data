@@ -1,0 +1,26 @@
+# API keys and sensitive configuration
+.env
+.evn
+
+# Python cache and environment files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.vscode/
+.idea/
+
+# Large Data files (>50MB) that GitHub rejects or warns about
+3-7-2026/data/form.json
+3-7-2026/data/profile_bank.jsonl
+Main/data/form.json
+Main/data/profile_bank.jsonl
+
+# Generated Output files (untrack output datasets by default)
+3-7-2026/output/
+Main/output/
+*.bak

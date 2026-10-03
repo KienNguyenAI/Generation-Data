@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecurePrep Pipeline - Sơ đồ quy trình chính xác</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-color: #f1f5f9;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --profile-color: #f87171;
+            --scenario-color: #fbbf24;
+            --form-color: #2dd4bf;
+            --manifest-color: #818cf8;
+            --supplements-color: #fb7185;
+            --prompt-color: #c084fc;
+            --llm-color: #a78bfa;
+            --annotate-color: #ec4899;
+            --success-color: #4ade80;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            max-width: 800px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 12px;
+            background: linear-gradient(to right, #38bdf8, #818cf8, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .pipeline-container {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 35px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-left: 4px solid var(--primary);
+            padding-left: 12px;
+        }
+
+        /* Flow Diagram styling */
+        .flow-board {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            margin-bottom: 30px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+        }
+
+        .svg-connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .connection-line {
+            fill: none;
+            stroke: #475569;
+            stroke-width: 2.5;
+            stroke-dasharray: 4 4;
+            animation: dash 40s linear infinite;
+        }
+
+        .connection-line.active {
+            stroke: var(--primary);
+            stroke-width: 3.5;
+            stroke-dasharray: none;
+            animation: none;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+
+        .flow-node {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 140px;
+            cursor: pointer;
+            z-index: 2;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .flow-node:hover {
+            transform: translate(-50%, -57%) scale(1.05);
+        }
+
+        .node-circle {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #0f172a;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .flow-node.active .node-circle {
+            box-shadow: 0 0 25px currentColor;
+            border-color: #fff;
+        }
+
+        .node-label {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-color);
+            background: rgba(15, 23, 42, 0.8);
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Colors for different steps */
+        .node-profile .node-circle { background-color: var(--profile-color); color: #fff; }
+        .node-scenario .node-circle { background-color: var(--scenario-color); color: #020617; }
+        .node-form .node-circle { background-color: var(--form-color); color: #020617; }
+        .node-manifest .node-circle { background-color: var(--manifest-color); color: #fff; }
+        .node-supplements .node-circle { background-color: var(--supplements-color); color: #fff; }
+        .node-prompt .node-circle { background-color: var(--prompt-color); color: #fff; }
+        .node-generation .node-circle { background-color: var(--llm-color); color: #fff; }
+        .node-validation .node-circle { background-color: #f97316; color: #fff; }
+        .node-annotation .node-circle { background-color: var(--annotate-color); color: #fff; }
+        .node-output .node-circle { background-color: var(--success-color); color: #020617; }
+
+        /* Detail Cards Section */
+        .detail-cards {
+            position: relative;
+            min-height: 280px;
+        }
+
+        .detail-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .detail-card.active {
+            display: block;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 12px;
+            text-transform: uppercase;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+
+        .code-block {
+            background: #020617;
+            padding: 14px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            color: #38bdf8;
+            margin-top: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255,255,255,0.05);
+            max-height: 180px;
+        }
+
+        .highlight-text {
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .designer-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .info-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .info-box:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .info-box h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+
+        .info-box p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .loop-annotation {
+            position: absolute;
+            background: rgba(249, 115, 22, 0.25);
+            border: 1px solid #f97316;
+            color: #ffedd5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            top: 125px;
+            left: 770px;
+            transform: translateX(-50%);
+            z-index: 3;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SecurePrep: Sơ đồ Quy Trình Đồng Hiện</h1>
+        <p>Quy trình sinh dữ liệu PII/SPI nâng cao kết hợp tham chiếu biểu mẫu hành chính thật, chế tài bọc nhãn LLM chặt chẽ và bộ gán nhãn xác định.</p>
+    </header>
+
+    <div class="pipeline-container">
+        <h2 class="section-title">Sơ đồ dịch chuyển dữ liệu (Branching & Merge)</h2>
+        
+        <div class="flow-board">
+            <div class="loop-annotation">Regen loop (nếu lỗi thẻ/thiếu trường)</div>
+            <svg class="svg-connections">
+                <defs>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569" />
+                    </marker>
+                    <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+                    </marker>
+                </defs>
+                
+                <!-- Profile to Manifest & Supplements -->
+                <path class="connection-line" id="path-profile-manifest" d="M 100 90 C 200 90, 200 120, 300 120" marker-end="url(#arrow)" />
+                <path class="connection-line" id="path-profile-supp" d="M 100 90 C 200 90, 200 330, 300 330" marker-end="url(#arrow)" />
+                
+                <!-- Scenario to Manifest & Supplements -->
+                <path class="connection-line" id="path-scenario-manifest" d="M 100 225 C 200 225, 200 120, 300 120" marker-end="url(#arrow)" />
+                <path class="connection-line" id="path-scenario-supp" d="M 100 225 C 200 225, 200 330, 300 330" marker-end="url(#arrow)" />
+                
+                <!-- Scenario to Form Ref (Template selection keyword search) -->
+                <path class="connection-line" id="path-scenario-form" d="M 100 225 V 360" marker-end="url(#arrow)" />
+                
+                <!-- Form Ref directly to Output (Metadata attached at export) -->
+                <path class="connection-line" id="path-form-output" d="M 100 360 C 200 450, 900 450, 1030 300" marker-end="url(#arrow)" />
+                
+                <!-- Manifest to Prompt -->
+                <path class="connection-line" id="path-manifest-prompt" d="M 300 120 C 420 120, 420 225, 520 225" marker-end="url(#arrow)" />
+                
+                <!-- Supplements to Prompt -->
+                <path class="connection-line" id="path-supp-prompt" d="M 300 330 C 420 330, 420 225, 520 225" marker-end="url(#arrow)" />
+                
+                <!-- Prompt to LLM -->
+                <path class="connection-line" id="path-prompt-llm" d="M 520 225 H 710" marker-end="url(#arrow)" />
+                
+                <!-- LLM to Validation -->
+                <path class="connection-line" id="path-llm-val" d="M 710 225 H 890" marker-end="url(#arrow)" />
+                
+                <!-- Validation Retry Loop -->
+                <path class="connection-line" id="path-loop" d="M 890 205 C 890 140, 710 140, 710 205" style="stroke: #f97316;" marker-end="url(#arrow)" />
+                
+                <!-- Validation to Annotator -->
+                <path class="connection-line" id="path-val-annot" d="M 890 225 C 960 225, 960 150, 1030 150" marker-end="url(#arrow)" />
+                
+                <!-- Annotator to Output -->
+                <path class="connection-line" id="path-annot-out" d="M 1030 150 C 1030 220, 1030 230, 1030 300" marker-end="url(#arrow)" />
+            </svg>
+
+            <!-- Inputs (Column 1) -->
+            <div class="flow-node node-profile active" style="left: 100px; top: 90px;" onclick="showCard(0)">
+                <div class="node-circle">Profile</div>
+                <div class="node-label">1. Hồ sơ PII/SPI</div>
+            </div>
+            
+            <div class="flow-node node-scenario" style="left: 100px; top: 225px;" onclick="showCard(1)">
+                <div class="node-circle">Scenario</div>
+                <div class="node-label">2. Kịch bản gốc</div>
+            </div>
+            
+            <div class="flow-node node-form" style="left: 100px; top: 360px;" onclick="showCard(2)">
+                <div class="node-circle">Form.json</div>
+                <div class="node-label">3. Tham chiếu Biểu mẫu</div>
+            </div>
+            
+            <!-- Realization / Prep (Column 2) -->
+            <div class="flow-node node-manifest" style="left: 300px; top: 120px;" onclick="showCard(3)">
+                <div class="node-circle">Manifest</div>
+                <div class="node-label">4. Ràng buộc trường</div>
+            </div>
+            
+            <div class="flow-node node-supplements" style="left: 300px; top: 330px;" onclick="showCard(4)">
+                <div class="node-circle">Supplements</div>
+                <div class="node-label">5. Thông tin bổ trợ</div>
+            </div>
+            
+            <!-- Prompt (Column 3) -->
+            <div class="flow-node node-prompt" style="left: 520px; top: 225px;" onclick="showCard(5)">
+                <div class="node-circle">Prompt</div>
+                <div class="node-label">6. Lập Dàn ý & Nháp</div>
+            </div>
+            
+            <!-- Execution & Check (Column 4) -->
+            <div class="flow-node node-generation" style="left: 710px; top: 225px;" onclick="showCard(6)">
+                <div class="node-circle">Gemini LLM</div>
+                <div class="node-label">7. Sinh & Hiệu đính</div>
+            </div>
+            
+            <div class="flow-node node-validation" style="left: 890px; top: 225px;" onclick="showCard(7)">
+                <div class="node-circle">Validation</div>
+                <div class="node-label">8. Kiểm duyệt độ phủ</div>
+            </div>
+            
+            <!-- Annotation & Output (Column 5) -->
+            <div class="flow-node node-annotation" style="left: 1030px; top: 150px;" onclick="showCard(8)">
+                <div class="node-circle">Annotator</div>
+                <div class="node-label">9. Gán nhãn 3 lớp</div>
+            </div>
+            
+            <div class="flow-node node-output" style="left: 1030px; top: 300px;" onclick="showCard(9)">
+                <div class="node-circle">dataset</div>
+                <div class="node-label">10. Tệp gộp JSONL</div>
+            </div>
+        </div>
+
+        <!-- Detail Cards -->
+        <div class="detail-cards">
+            <!-- 0. Profile -->
+            <div class="detail-card active" id="card-0">
+                <div class="card-header">
+                    <span class="card-badge" style="background-color: var(--profile-color); color: white;">Hồ sơ gốc</span>
+                    <span class="card-title">Ngân hàng hồ sơ PII/SPI gốc (profile_bank.jsonl)</span>
+                </div>
+                <div class="card-body">
+                    <p>Cơ sở dữ liệu gốc chứa hồ sơ của khoảng 30,000 thực thể công dân nhân tạo đầy đủ họ tên, CCCD, ngày sinh, các mối quan hệ người thân cũng như các thông tin nhạy cảm. Đây là nguồn dữ liệu tĩnh ban đầu được sử dụng xuyên suốt quy trình sinh.</p>
+                    <div class="code-block">
+{
+  "profile_id": "pf_001822",
+  "fields": {
+    "full_name": "Nguyễn Khánh Mai",
+    "religion": "Không tôn giáo",
+    "criminal_record": "không có án tích theo Phiếu lý lịch tư pháp số 0798/9541/STP-LLTP"
+  }
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. Scenario -->
+            <div class="detail-card" id="card-1">
+                <div class="card-header">
+                    <span class="card-badge" style="background-color: var(--scenario-color); color: #0f172a;">Kịch bản</span>
+                    <span class="card-title">Danh mục kịch bản ngữ cảnh (scenario_catalog.json)</span>
+                </div>
+                <div class="card-body">
+                    <p>Bao gồm 21 kịch bản chi tiết quyết định văn cảnh bộc lộ thông tin nhạy cảm (như Hồ sơ giám định y tế, Phiếu lý lịch tư pháp, Đơn xin ly hôn...). Quy định loại văn phong (`register`), phân cấp mức độ nhận diện (`cue_style`), và định danh các thuộc tính nhạy cảm mục tiêu cần khai thác (`spi_targets`).</p>
+                    <div class="code-block">
+{
+  "id": "sc_crim_lltp",
+  "title": "Phiếu lý lịch tư pháp",
+  "register": "dialogue",
+  "spi_targets": ["criminal_record"]
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Form.json -->
+            <div class="detail-card" id="card-2">
+                <div class="card-header">
+                    <span class="card-badge" style="background-color: var(--form-color); color: #0f172a;">Biểu mẫu tham chiếu</span>
+                    <span class="card-title">Hồ sơ biểu mẫu hành chính thật (form.json)</span>
+                </div>
+                <div class="card-body">
+                    <p>Hệ thống nạp thông tin tham chiếu từ hơn 9,000 biểu mẫu hành chính Việt Nam thực tế. Kịch bản gốc (`Scenario`) sẽ dò tìm biểu mẫu phù hợp (bằng cơ chế tìm kiếm từ khóa chéo trên `record_type` và `form_raw_text`). <span class="highlight-text">Tác vụ thực tế (Fix đúng theo code):</span> Tệp biểu mẫu này <strong>không</strong> đưa trực tiếp vào LLM để viết nháp mà được nạp làm siêu dữ liệu (Metadata) đính kèm thẳng vào bản ghi đầu ra để phục vụ công tác đối chiếu sau này.</p>
+                    <div class="code-block">
+{
+  "template_id": "3.000329",
+  "agency": "Ngân hàng Phát triển Việt Nam",
+  "form_raw_text": "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM...\nPHIẾU ĐĂNG KÝ DỰ TUYỂN..."
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Manifest -->
+            <div class="detail-card" id="card-3">
+                <div class="card-header">
+                    <span class="card-badge" style="background-color: var(--manifest-color); color: white;">Ràng buộc trường</span>
+                    <span class="card-title">Manifest dữ liệu nhạy cảm (build_manifest)</span>
+                </div>
+                <div class="card-body">
+                    <p>Quy trình lọc và chuyển đổi thuộc tính nhạy cảm theo ngữ cảnh (Fix mới):</p>
+                    <ul>
+                        <li>Nếu là án tích sạch (không có án tích) -> Rút khỏi manifest nhạy cảm, đưa vào Supplements dưới dạng văn bản thường.</li>
+                        <li>Nếu là tôn giáo mặc định (Không tôn giáo) hoặc chính trị mặc định (Quần chúng) và văn phong là đối thoại/văn xuôi tự sự -> Lược bỏ hoàn toàn khỏi kịch bản để tránh sinh ra câu văn giả tạo, gượng ép.</li>
+                    </ul>
+                    <div class="code-block">
+// Dữ liệu chỉ giữ lại full_name và given_name để gán nhãn
+[
+  {"field": "full_name", "surfaces": ["Nguyễn Khánh Mai"], "mechanism": "verbatim"},
+  {"field": "given_name", "surfaces": ["Mai"], "mechanism": "name_component", "derived": true}
+]
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Supplements -->
+            <div class="detail-card" id="card-4">
+                <div class="card-header">
+                    <span class="card-badge" style="background-color: var(--supplements-color); color: white;">Bổ trợ</span>
+                    <span class="card-title">Thông tin bổ trợ & Nhiễu định danh (realize_supplemental)</span>
+                </div>
+                <div class="card-body">
+                    <p>Giai đoạn này chuẩn bị các thông tin bổ trợ không gán nhãn hoặc các biến thể gây nhiễu định danh (Distractors) như: Cơ quan tiếp nhận hồ sơ, Số quyết định giấy tờ (distractors 12 số cạnh CCCD), và thông tin PII của người thân (được mượn ngẫu nhiên từ hồ sơ khác để tạo cấu trúc đa chủ thể).</p>
+                    <div class="code-block">
+// Án tích sạch được đẩy vào supplements làm text thường
+supplements = [
+  "Tình trạng án tích/tư pháp: «không có án tích theo Phiếu lý lịch tư pháp số 0798/9541/STP-LLTP»"
+]
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Prompt -->
+            <div class="detail-card" id="card-5">
+                <div class="card-header">
+                    <span class="card-badge" style="background-color: var(--prompt-color); color: white;">Prompt Builder</span>
+                    <span class="card-title">Thiết kế Prompt Dàn ý & Nháp viết</span>
+                </div>
+                <div class="card-body">
+                    <p>Hợp nhất Manifest (PII/SPI cần gán nhãn) và Supplements (PII thường/Distractor) thành prompt yêu cầu lập dàn ý, sau đó là prompt viết bản nháp. Quy định nghiêm ngặt cách bọc thẻ <code>⟦field⟧</code> quanh thông tin nhạy cảm thực tế và cấm LLM bọc thẻ cho các từ phủ định án tích.</p>
+                    <div class="code-block">
+QUY TẮC: Chỉ dán nhãn các tội danh cụ thể. 
+TUYỆT ĐỐI CẤM bọc thẻ cho các câu khẳng định không có án tích (ví dụ: không bọc "không có án tích").
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Gemini LLM -->
+            <div class="detail-card" id="card-6">
+                <div class="card-header">
+                    <span class="card-badge" style="background-color: var(--llm-color); color: white;">Sinh văn bản</span>
+                    <span class="card-title">Sinh bản nháp & Hiệu đính (Gemini-Flash-Lite)</span>
+                </div>
+                <div class="card-body">
+                    <p>Thực hiện gọi API Gemini qua 2 giai đoạn: sinh nháp ở nhiệt độ cao (temp=0.85) để tăng độ tự nhiên và hiệu đính (Revision) ở nhiệt độ thấp (temp=0.20) để sửa lỗi đóng/mở thẻ <code>⟦field⟧</code>, loại bỏ các ký tự thừa như ``` và đồng bộ hóa từ ngữ theo văn phong Việt Nam.</p>
+                    <div class="code-block">
+Thân chủ: Tôi tên là Nguyễn Khánh Mai...
+Chuyên gia: Chào Mai. Tôi ghi nhận anh không có án tích theo Phiếu lý lịch tư pháp số 0798/9541/STP-LLTP...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Validation -->
+            <div class="detail-card" id="card-7">
+                <div class="card-header">
+                    <span class="card-badge" style="background: #f97316; color: white;">Xác thực</span>
+                    <span class="card-title">Kiểm tra cú pháp thẻ & Độ phủ (Relaxed Verification)</span>
+                </div>
+                <div class="card-body">
+                    <p>Văn bản sau khi sinh được kiểm tra tính hợp lệ về cú pháp thẻ mở đóng. Tiếp theo, chạy hàm <code>coverage()</code> để kiểm tra độ phủ của thông tin. (Fix mới): Cơ chế kiểm tra độ phủ họ tên linh hoạt, chấp nhận việc chỉ xuất hiện tên riêng (Given Name) thay vì bắt buộc khớp 100% Họ tên đầy đủ, giảm tỷ lệ sinh lại gượng ép.</p>
+                    <div class="code-block">
+ext = extract_anchor_tags(tagged)
+miss = coverage(ext["clean_text"], manifest) # Trả về [] -> Đạt độ phủ!
+if not miss: 
+    proceed()
+else:
+    retry_generation() # Chạy lại tối đa 3 lần
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. Annotator -->
+            <div class="detail-card" id="card-8">
+                <div class="card-header">
+                    <span class="card-badge" style="background-color: var(--annotate-color); color: white;">Gán nhãn</span>
+                    <span class="card-title">Bộ gán nhãn Heuristic 3 lớp (Không dùng LLM)</span>
+                </div>
+                <div class="card-body">
+                    <p>Nhận văn bản sạch và các nhãn anchor trích xuất từ thẻ. Thực hiện khớp chính xác (verbatim) cho mã định danh, khớp ngữ cảnh (cue-context) cho các trường dễ nhầm lẫn như dân tộc/tôn giáo, và gán nhãn thành phần họ tên (name-component) độc lập. (Fix mới): Dùng trọng số ưu tiên `PRIORITIES` để gỡ chồng lấn, giữ lại `given_name` độc lập không bị nuốt bởi `private_life`.</p>
+                    <div class="code-block">
+// Output spans gán nhãn sau khi gỡ chồng lấn
+[
+  {"start": 12, "end": 28, "field": "full_name", "label": "PII"},
+  {"start": 56, "end": 59, "field": "given_name", "label": "PII"}
+]
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. dataset -->
+            <div class="detail-card" id="card-9">
+                <div class="card-header">
+                    <span class="card-badge" style="background-color: var(--success-color); color: #020617;">Đầu ra</span>
+                    <span class="card-title">Xuất hồ sơ tích hợp dữ liệu (dataset.jsonl)</span>
+                </div>
+                <div class="card-body">
+                    <p>Ghi nhận hồ sơ dữ liệu hoàn chỉnh ở định dạng JSON Lines chứa văn bản sạch (`content`), danh sách spans nhãn phẳng (`spans`) và các trường thông tin kỹ thuật bổ trợ. File đầu ra sẵn sàng phục vụ cho việc huấn luyện mô hình học máy.</p>
+                    <div class="code-block">
+{"profile_id": "pf_001822", "scenario": "sc_crim_lltp", "content": "...", "spans": [...], "meta": {"tag_ok": true}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Designer Info Boxes -->
+    <div class="designer-info">
+        <div class="info-box">
+            <h3>Constraint-First Generation</h3>
+            <p>Khống chế giá trị PII/SPI tĩnh ở lớp mã nguồn. LLM chỉ sinh phần văn xuôi bao quanh, ngăn chặn hoàn toàn lỗi ảo tưởng thông tin định danh (hallucination).</p>
+        </div>
+        <div class="info-box">
+            <h3>Deterministic Tagging</h3>
+            <p>Việc gán nhãn và định vị start/end được thực hiện bằng giải thuật Heuristics xác định trên manifest, loại bỏ hoàn toàn sự thiếu chính xác về tọa độ của LLM.</p>
+        </div>
+        <div class="info-box">
+            <h3>Heuristic & Custom Rules</h3>
+            <p>Sự kết hợp giữa Heuristics (Khớp chính xác, từ khóa dẫn đường) và luật tùy biến (Phân cấp độ ưu tiên chồng lấn) giúp dữ liệu gán nhãn sạch và nhất quán tuyệt đối.</p>
+        </div>
+    </div>
+
+    <script>
+        function showCard(index) {
+            const nodes = document.querySelectorAll('.flow-node');
+            const cards = document.querySelectorAll('.detail-card');
+            
+            nodes.forEach((n, i) => {
+                if (i === index) {
+                    n.classList.add('active');
+                } else {
+                    n.classList.remove('active');
+                }
+            });
+
+            cards.forEach((c, i) => {
+                if (i === index) {
+                    c.classList.add('active');
+                } else {
+                    c.classList.remove('active');
+                }
+            });
+
+            // Active path highlighting
+            const lines = document.querySelectorAll('.connection-line');
+            lines.forEach((line) => {
+                line.classList.remove('active');
+            });
+
+            // Path activation mapping
+            if (index >= 2) { // Form Ref or later
+                document.getElementById('path-scenario-form').classList.add('active');
+            }
+            if (index >= 3) { // Manifest or later
+                document.getElementById('path-profile-manifest').classList.add('active');
+                document.getElementById('path-scenario-manifest').classList.add('active');
+            }
+            if (index >= 4) { // Supplements or later
+                document.getElementById('path-profile-supp').classList.add('active');
+                document.getElementById('path-scenario-supp').classList.add('active');
+            }
+            if (index >= 5) { // Prompt or later
+                document.getElementById('path-manifest-prompt').classList.add('active');
+                document.getElementById('path-supp-prompt').classList.add('active');
+            }
+            if (index >= 6) { // LLM or later
+                document.getElementById('path-prompt-llm').classList.add('active');
+            }
+            if (index >= 7) { // Validation or later
+                document.getElementById('path-llm-val').classList.add('active');
+            }
+            if (index >= 8) { // Annotator or later
+                document.getElementById('path-val-annot').classList.add('active');
+            }
+            if (index >= 9) { // Output
+                document.getElementById('path-form-output').classList.add('active');
+                document.getElementById('path-annot-out').classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
